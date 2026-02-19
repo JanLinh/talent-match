@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, CheckCircle, Brain, Activity, ChevronRight, BarChart2, Users, Play, Sparkles, Plus, X, ShieldAlert, Info, Clock, Wifi, Monitor, Briefcase, Tag, Megaphone, ShoppingBag, Link as LinkIcon, Copy, LogOut, Send, Clock3, Save, Lock } from 'lucide-react';
+import { User, CheckCircle, Brain, Activity, ChevronRight, BarChart2, Users, Play, Sparkles, Plus, X, ShieldAlert, Info, Clock, Wifi, Monitor, Briefcase, Tag, Megaphone, ShoppingBag, Link as LinkIcon, Copy, LogOut, Send, Clock3, Save, Lock, Trash2, Calculator, Globe } from 'lucide-react';
 
 // --- FIREBASE SETUP ---
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCji-kM2w14LSBB1ndfoo8yN_8gsvh7OhM",
@@ -60,7 +60,9 @@ const ROLES = [
   { id: 'sales', label: 'Obchodník (B2B)', icon: Briefcase },
   { id: 'retail', label: 'Prodejce na prodejně', icon: Tag },
   { id: 'marketing', label: 'Marketing Specialist', icon: Megaphone },
-  { id: 'procurement', label: 'Nákupčí', icon: ShoppingBag }
+  { id: 'procurement', label: 'Nákupčí', icon: ShoppingBag },
+  { id: 'accountant', label: 'Účetní', icon: Calculator },
+  { id: 'general', label: 'Obecná pozice', icon: Globe, noSpecific: true }
 ];
 
 const QUESTIONS = {
@@ -228,7 +230,30 @@ const QUESTIONS = {
       { id: 18, question: 'Faktura?', options: ['Daňový doklad.', 'Papír.', 'Objednávka.', 'Nabídka.'], correct: 0 },
       { id: 19, question: 'Reklamace dodávky?', options: ['Vyhodit.', 'Sepsat reklamační protokol.', 'Mlčet.', 'Zaplatit.'], correct: 1 },
       { id: 20, question: 'Etický kodex?', options: ['Pravidla chování.', 'Kód zámku.', 'Program.', 'Nic.'], correct: 0 }
-    ]
+    ],
+    accountant: [
+      { id: 1, question: 'Co je rozvaha?', options: ['Výkaz aktiv a pasiv.', 'Výkaz zisků.', 'Daňové přiznání.', 'Výpis z účtu.'], correct: 0 },
+      { id: 2, question: 'DPH zkratka?', options: ['Daň z přidané hodnoty.', 'Daňový pohyb hodnot.', 'Doklad pohybu hotovosti.', 'Daň pro hospodářství.'], correct: 0 },
+      { id: 3, question: 'Co je účetní odpis?', options: ['Ztráta peněz.', 'Rozložení ceny majetku v čase.', 'Platba dluhu.', 'Bankovní poplatek.'], correct: 1 },
+      { id: 4, question: 'LIFO vs FIFO?', options: ['Stejné metody.', 'Metody oceňování zásob.', 'Typy faktur.', 'Způsoby platby.'], correct: 1 },
+      { id: 5, question: 'Co je cash flow?', options: ['Hotovost v pokladně.', 'Tok peněz (příjmy a výdaje).', 'Zisk firmy.', 'Bankovní úvěr.'], correct: 1 },
+      { id: 6, question: 'Saldo účtu je?', options: ['Úrok.', 'Rozdíl mezi debitem a kreditem.', 'Poplatek bance.', 'Celkový obrat.'], correct: 1 },
+      { id: 7, question: 'Co znamená MD v účetnictví?', options: ['Má dáti (debet).', 'Měsíční daň.', 'Mzdový doklad.', 'Materiálový doklad.'], correct: 0 },
+      { id: 8, question: 'Výsledovka zobrazuje?', options: ['Majetek firmy.', 'Náklady a výnosy za období.', 'Pohledávky.', 'Zásoby.'], correct: 1 },
+      { id: 9, question: 'Co je pohledávka?', options: ['Dluh firmy.', 'Nárok firmy na příjem peněz.', 'Zásoby na skladě.', 'Bankovní půjčka.'], correct: 1 },
+      { id: 10, question: 'Zákonná sazba DPH v ČR (základní)?', options: ['15 %', '19 %', '21 %', '25 %'], correct: 2 },
+      { id: 11, question: 'Co je závazek?', options: ['Pohledávka.', 'Povinnost zaplatit dodavateli.', 'Zisk.', 'Majetek.'], correct: 1 },
+      { id: 12, question: 'Dohadná položka je?', options: ['Odhad výše nákladu/výnosu.', 'Chyba v účetnictví.', 'Sleva od dodavatele.', 'Daňový odpočet.'], correct: 0 },
+      { id: 13, question: 'Co je interní audit?', options: ['Kontrola finančního úřadu.', 'Nezávislá kontrola uvnitř firmy.', 'Bankovní kontrola.', 'Roční inventura.'], correct: 1 },
+      { id: 14, question: 'Účetní uzávěrka se dělá?', options: ['Každý měsíc.', 'Jednou ročně (k 31.12).', 'Každý kvartál.', 'Dle potřeby.'], correct: 1 },
+      { id: 15, question: 'Co je leasingová smlouva?', options: ['Kupní smlouva.', 'Smlouva o pronájmu s opcí koupě.', 'Pojistná smlouva.', 'Pracovní smlouva.'], correct: 1 },
+      { id: 16, question: 'EBITDA znamená?', options: ['Čistý zisk.', 'Zisk před úroky, daněmi a odpisy.', 'Tržby celkem.', 'Provozní náklady.'], correct: 1 },
+      { id: 17, question: 'Co je faktura proforma?', options: ['Platný daňový doklad.', 'Zálohová/informační faktura.', 'Dobropis.', 'Storno faktura.'], correct: 1 },
+      { id: 18, question: 'Inventarizace majetku slouží k?', options: ['Výpočtu daní.', 'Ověření skutečného stavu vs. účetní evidence.', 'Stanovení ceny majetku.', 'Odpisu majetku.'], correct: 1 },
+      { id: 19, question: 'Co je dobropis?', options: ['Faktura za přeplatek/oprava faktury.', 'Potvrzení o platbě.', 'Objednávka.', 'Smlouva.'], correct: 0 },
+      { id: 20, question: 'Účetní jednotka musí archivovat účetní záznamy?', options: ['1 rok.', '5 let.', '10 let.', '3 roky.'], correct: 2 }
+    ],
+    general: []
   }
 };
 
@@ -312,6 +337,9 @@ const TestRunner = ({ roleId, onComplete }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
+  const isNoSpecific = ROLES.find(r => r.id === roleId)?.noSpecific;
+  const sectionCount = isNoSpecific ? 3 : 4;
+
   const handleAnswer = (value) => {
     const sectionKeys = ['iq', 'personality', 'psycho', 'specific'];
     const currentKey = sectionKeys[currentSection];
@@ -322,7 +350,7 @@ const TestRunner = ({ roleId, onComplete }) => {
     if (questionIndex < currentQuestions.length - 1) {
       setQuestionIndex(prev => prev + 1);
     } else {
-      if (currentSection < 3) { setCurrentSection(prev => prev + 1); setQuestionIndex(0); }
+      if (currentSection < sectionCount - 1) { setCurrentSection(prev => prev + 1); setQuestionIndex(0); }
       else { calculateAndComplete(newAnswers); }
     }
   };
@@ -362,14 +390,15 @@ const TestRunner = ({ roleId, onComplete }) => {
     specificQs.forEach((q, idx) => { if (finalAnswers.specific[idx] === q.correct) specificCorrect++; });
     const specificScore = Math.round((specificCorrect / specificQs.length) * 100);
 
-    const results = { iq: iqScore, ...traits, integrity: integrityScore, specific: specificScore };
+    const results = { iq: iqScore, ...traits, integrity: integrityScore, specific: isNoSpecific ? null : specificScore };
     onComplete(results, timeTaken, finalAnswers);
   };
 
   const sectionKey = ['iq', 'personality', 'psycho', 'specific'][currentSection];
   const questions = sectionKey === 'specific' ? QUESTIONS.specific[roleId] : QUESTIONS[sectionKey];
   const currentQ = questions[questionIndex];
-  const totalQs = QUESTIONS.iq.length + QUESTIONS.personality.length + QUESTIONS.psycho.length + (QUESTIONS.specific[roleId]?.length || 0);
+  const specificLen = isNoSpecific ? 0 : (QUESTIONS.specific[roleId]?.length || 0);
+  const totalQs = QUESTIONS.iq.length + QUESTIONS.personality.length + QUESTIONS.psycho.length + specificLen;
   let currentGlobalIndex = questionIndex;
   if (currentSection > 0) currentGlobalIndex += QUESTIONS.iq.length;
   if (currentSection > 1) currentGlobalIndex += QUESTIONS.personality.length;
@@ -384,7 +413,7 @@ const TestRunner = ({ roleId, onComplete }) => {
       <div className="mb-8 mt-4">
         <div className="flex justify-between items-end mb-2">
           <span className={`text-xs font-bold ${S_MAGENTA_TEXT} uppercase tracking-widest`}>Otázka {currentGlobalIndex + 1} / {totalQs}</span>
-          <span className="text-gray-400 text-sm">Sekce {currentSection + 1}/4</span>
+          <span className="text-gray-400 text-sm">Sekce {currentSection + 1}/{sectionCount}</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2 mb-6">
           <div className={`${S_MAGENTA} h-2 rounded-full transition-all duration-500 ease-out`} style={{ width: `${((currentGlobalIndex + 1) / totalQs) * 100}%` }}></div>
@@ -410,7 +439,7 @@ const TestRunner = ({ roleId, onComplete }) => {
             </div>
           </div>
         )}
-        {(currentSection === 2 || currentSection === 3) && (
+        {(currentSection === 2 || currentSection === 3) && currentQ && (
           <div className="space-y-3">
             {currentQ.options.map((opt, idx) => (
               <button key={idx} onClick={() => handleAnswer(currentSection === 3 ? idx : opt.score)} className="w-full p-4 border border-gray-300 rounded hover:border-[#E30074] hover:bg-pink-50 transition-all text-left text-sm text-gray-700">
@@ -490,7 +519,7 @@ const AnswerDetailView = ({ candidate }) => {
       {renderSection('iq', 'Logické myšlení (IQ)', QUESTIONS.iq)}
       {renderSection('personality', 'Osobnostní profil', QUESTIONS.personality)}
       {renderSection('psycho', 'Integrita & Situace', QUESTIONS.psycho)}
-      {renderSection('specific', `Odbornost: ${ROLES.find(r => r.id === candidate.roleId)?.label}`, QUESTIONS.specific[candidate.roleId] || [])}
+      {!ROLES.find(r => r.id === candidate.roleId)?.noSpecific && renderSection('specific', `Odbornost: ${ROLES.find(r => r.id === candidate.roleId)?.label}`, QUESTIONS.specific[candidate.roleId] || [])}
     </div>
   );
 };
@@ -551,7 +580,7 @@ const AdminView = ({
   selectedBenchmarkId, setSelectedBenchmarkId, showBenchmarkModal, setShowBenchmarkModal,
   showInviteModal, setShowInviteModal, inviteForm, setInviteForm, generatedLink, setGeneratedLink,
   handleGenerateInvite, isGeneratingLink, newRoleDescription, setNewRoleDescription,
-  generateBenchmark, isGeneratingBenchmark, setAppMode, handleSimulateLinkClick
+  generateBenchmark, isGeneratingBenchmark, setAppMode, handleSimulateLinkClick, onDeleteCandidate
 }) => {
   const viewCandidate = candidates.find(c => c.id === activeCandidateId);
 
@@ -624,7 +653,7 @@ const AdminView = ({
                       </select>
                     </div>
                     <div className="space-y-5">
-                      {METRIC_LABELS.map(m => {
+                      {METRIC_LABELS.filter(m => !(m.key === 'specific' && ROLES.find(r => r.id === viewCandidate.roleId)?.noSpecific)).map(m => {
                         const candVal = viewCandidate.results?.[m.key] ?? 0;
                         const benchVal = activeBenchmark?.metrics?.[m.key] ?? 0;
                         const diff = candVal - benchVal;
@@ -713,7 +742,7 @@ const AdminView = ({
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-bold">
-                    <tr><th className="p-4">Jméno</th><th className="p-4">Role</th><th className="p-4">Datum</th><th className="p-4">Status</th><th className="p-4 text-right">Doba</th><th className="p-4 text-right">Skóre</th><th className="p-4"></th></tr>
+                    <tr><th className="p-4">Jméno</th><th className="p-4">Role</th><th className="p-4">Datum / Čas</th><th className="p-4">Status</th><th className="p-4 text-right">Doba</th><th className="p-4 text-right">Skóre</th><th className="p-4"></th></tr>
                   </thead>
                   <tbody className="text-sm">
                     {candidates.length === 0 ? (
@@ -724,14 +753,22 @@ const AdminView = ({
                         <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="p-4 font-bold text-gray-900">{c.name}</td>
                           <td className="p-4 text-gray-600"><div className="flex items-center gap-2">{RoleIcon && <RoleIcon size={16} />}{ROLES.find(r => r.id === c.roleId)?.label}</div></td>
-                          <td className="p-4 text-gray-500">{c.date}</td>
+                          <td className="p-4 text-gray-500">
+                            <div className="text-xs">{c.date}</div>
+                            {c.linkGeneratedAt && <div className="text-[10px] text-gray-400">{new Date(c.linkGeneratedAt).toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>}
+                          </td>
                           <td className="p-4">{c.status === 'completed'
                             ? <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><CheckCircle size={12} /> Hotovo</span>
                             : <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><Activity size={12} /> Čeká se</span>}
                           </td>
                           <td className="p-4 text-right font-mono text-gray-500">{formatTime(c.timeTaken)}</td>
                           <td className="p-4 text-right font-bold text-lg">{c.score ? <span className={c.score > 80 ? 'text-green-600' : 'text-gray-900'}>{c.score}</span> : <span className="text-gray-300">-</span>}</td>
-                          <td className="p-4 text-right">{c.status === 'completed' && <button onClick={() => setActiveCandidateId(c.id)} className="text-[#E30074] font-bold hover:underline text-xs">Zobrazit</button>}</td>
+                          <td className="p-4 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              {c.status === 'completed' && <button onClick={() => setActiveCandidateId(c.id)} className="text-[#E30074] font-bold hover:underline text-xs">Zobrazit</button>}
+                              <button onClick={() => onDeleteCandidate(c.id, c.name)} className="text-red-400 hover:text-red-600 transition-colors" title="Smazat záznam"><Trash2 size={15} /></button>
+                            </div>
+                          </td>
                         </tr>
                       );
                     })}
@@ -919,11 +956,13 @@ export default function TalentMatchApp() {
     if (!inviteForm.name) return;
     setIsGeneratingLink(true);
     try {
+      const now = new Date();
       const newCandidate = {
         name: inviteForm.name,
         roleId: inviteForm.role,
         status: 'pending',
-        date: new Date().toLocaleDateString('cs-CZ'),
+        date: now.toLocaleDateString('cs-CZ'),
+        linkGeneratedAt: now.toISOString(),
         createdAt: serverTimestamp(),
         score: null,
         results: null,
@@ -960,9 +999,9 @@ export default function TalentMatchApp() {
   };
 
   const handleCandidateFinish = async (results, timeTaken, rawAnswers) => {
-    const avgScore = Math.round(
-      ((results.iq || 0) + (results.specific || 0) + (results.integrity || 0) + (results.conscientiousness || 0)) / 4
-    );
+    const scoreFields = [results.iq || 0, results.integrity || 0, results.conscientiousness || 0];
+    if (results.specific !== null && results.specific !== undefined) scoreFields.push(results.specific);
+    const avgScore = Math.round(scoreFields.reduce((a, b) => a + b, 0) / scoreFields.length);
     try {
       const candidateRef = doc(db, "candidates", currentCandidate.id);
       await updateDoc(candidateRef, {
@@ -977,6 +1016,16 @@ export default function TalentMatchApp() {
     } catch (e) {
       console.error("Chyba při ukládání výsledků:", e);
       alert("Výsledky se nepodařilo uložit. Zkontrolujte připojení.");
+    }
+  };
+
+  const handleDeleteCandidate = async (candidateId, candidateName) => {
+    if (!window.confirm(`Opravdu chcete smazat záznam kandidáta "${candidateName}"? Tato akce je nevratná.`)) return;
+    try {
+      await deleteDoc(doc(db, "candidates", candidateId));
+    } catch (e) {
+      console.error("Chyba při mazání:", e);
+      alert("Nepodařilo se smazat záznam.");
     }
   };
 
@@ -1051,6 +1100,7 @@ Napiš strukturovaný report v češtině:
           setGeneratedLink={setGeneratedLink}
           handleSimulateLinkClick={handleSimulateLinkClick}
           isGeneratingLink={isGeneratingLink}
+          onDeleteCandidate={handleDeleteCandidate}
           showBenchmarkModal={showBenchmarkModal}
           setShowBenchmarkModal={setShowBenchmarkModal}
           newRoleDescription={newRoleDescription}
