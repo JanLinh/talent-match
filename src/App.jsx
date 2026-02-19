@@ -701,7 +701,7 @@ const AdminView = ({
   const getActiveBenchmark = () => {
     if (selectedBenchmarkId) return benchmarks.find(b => b.id === selectedBenchmarkId) || benchmarks[0];
     if (viewCandidate) {
-      const candidateRoleName = ROLES.find(r => r.id === viewCandidate.roleId)?.label.split(' ')[0].toLowerCase();
+      const candidateRoleName = allRoles.find(r => r.id === viewCandidate.roleId)?.label?.split(' ')[0]?.toLowerCase() || '';
       return benchmarks.find(b => b.role.toLowerCase().includes(candidateRoleName)) || benchmarks[0];
     }
     return benchmarks[0];
@@ -1305,6 +1305,7 @@ Napiš strukturovaný report v češtině:
       {appMode === 'landing' && <LandingView setAppMode={setAppMode} />}
       {appMode === 'login' && <LoginScreen onLogin={handleLogin} />}
       {appMode === 'admin' && (
+        <>
         <AdminView
           candidates={candidates}
           activeCandidateId={activeCandidateId}
@@ -1340,6 +1341,7 @@ Napiš strukturovaný report v češtině:
           onExportPdf={handleExportPdf}
         />
         <CustomRoleModal isOpen={showCustomRoleModal} onClose={() => setShowCustomRoleModal(false)} onSave={handleSaveCustomRole} />
+        </>
       )}
       {appMode === 'candidate' && currentCandidate && (
         <CandidateView
