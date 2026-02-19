@@ -19,7 +19,8 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const db = getFirestore(app);
 
 // --- GEMINI API ---
-const GEMINI_API_KEY = "AIzaSyDcUtAzaJfhPxogZTzL1urDJ4EFVEKVoKM";
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
+``;
 
 async function callGemini(prompt, systemInstruction = "", isJson = false) {
   try {
