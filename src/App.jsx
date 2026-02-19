@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { User, CheckCircle, Brain, Activity, ChevronRight, BarChart2, Users, Play, Sparkles, Plus, X, ShieldAlert, Info, Clock, Wifi, Monitor, Briefcase, Tag, Megaphone, ShoppingBag, Link as LinkIcon, Copy, LogOut, Send, Clock3, Save, Lock, Trash2, Calculator, Globe } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, CheckCircle, Brain, Activity, ChevronRight, BarChart2, Users, Play, Sparkles, Plus, X, ShieldAlert, Info, Clock, Wifi, Monitor, Briefcase, Tag, Megaphone, ShoppingBag, Link as LinkIcon, Copy, LogOut, Send, Clock3, Lock, Trash2, Calculator, Globe, FileText, Download, Edit3 } from 'lucide-react';
 
 // --- FIREBASE SETUP ---
 import { initializeApp, getApps } from "firebase/app";
@@ -50,18 +50,9 @@ async function callGemini(prompt, systemInstruction = "", isJson = false) {
 }
 
 // --- CONFIGURATION ---
-const INITIAL_BENCHMARKS = [
-  { id: 'dev_senior', role: 'Senior Developer', metrics: { iq: 85, openness: 90, conscientiousness: 80, extraversion: 30, agreeableness: 60, neuroticism: 20, integrity: 85, specific: 90 } },
-  { id: 'sales_rockstar', role: 'Top Obchodník', metrics: { iq: 65, openness: 60, conscientiousness: 75, extraversion: 95, agreeableness: 80, neuroticism: 30, integrity: 70, specific: 95 } },
-  { id: 'pm_lead', role: 'Projektový Manažer', metrics: { iq: 75, openness: 70, conscientiousness: 95, extraversion: 70, agreeableness: 50, neuroticism: 40, integrity: 90, specific: 80 } }
-];
+const INITIAL_BENCHMARKS = [];
 
-const ROLES = [
-  { id: 'sales', label: 'Obchodník (B2B)', icon: Briefcase },
-  { id: 'retail', label: 'Prodejce na prodejně', icon: Tag },
-  { id: 'marketing', label: 'Marketing Specialist', icon: Megaphone },
-  { id: 'procurement', label: 'Nákupčí', icon: ShoppingBag },
-  { id: 'accountant', label: 'Účetní', icon: Calculator },
+const BASE_ROLES = [
   { id: 'general', label: 'Obecná pozice', icon: Globe, noSpecific: true }
 ];
 
@@ -322,7 +313,7 @@ const MatrixPuzzle = () => (
 );
 
 // --- TEST RUNNER ---
-const TestRunner = ({ roleId, onComplete }) => {
+const TestRunner = ({ roleId, onComplete, isNoSpecificRole }) => {
   const TEST_DURATION_SECONDS = 45 * 60;
   const [timeLeft, setTimeLeft] = useState(TEST_DURATION_SECONDS);
   const [currentSection, setCurrentSection] = useState(0);
@@ -337,7 +328,7 @@ const TestRunner = ({ roleId, onComplete }) => {
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  const isNoSpecific = ROLES.find(r => r.id === roleId)?.noSpecific;
+  const isNoSpecific = isNoSpecificRole || false;
   const sectionCount = isNoSpecific ? 3 : 4;
 
   const handleAnswer = (value) => {
@@ -519,7 +510,7 @@ const AnswerDetailView = ({ candidate }) => {
       {renderSection('iq', 'Logické myšlení (IQ)', QUESTIONS.iq)}
       {renderSection('personality', 'Osobnostní profil', QUESTIONS.personality)}
       {renderSection('psycho', 'Integrita & Situace', QUESTIONS.psycho)}
-      {!ROLES.find(r => r.id === candidate.roleId)?.noSpecific && renderSection('specific', `Odbornost: ${ROLES.find(r => r.id === candidate.roleId)?.label}`, QUESTIONS.specific[candidate.roleId] || [])}
+      {!(candidate.roleId === 'general') && QUESTIONS.specific[candidate.roleId]?.length > 0 && renderSection('specific', `Odbornost: ${candidate.roleId}`, QUESTIONS.specific[candidate.roleId] || [])}
     </div>
   );
 };
@@ -573,6 +564,128 @@ const LoginScreen = ({ onLogin }) => {
   );
 };
 
+// --- CUSTOM ROLE MODAL ---
+const CustomRoleModal = ({ isOpen, onClose, onSave }) => {
+  const [roleName, setRoleName] = useState('');
+  const [questions, setQuestions] = useState(
+    Array.from({ length: 20 }, (_, i) => ({ id: i + 1, question: '', options: ['', '', '', ''], correct: 0 }))
+  );
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeQ, setActiveQ] = useState(0);
+
+  const handleGenerate = async () => {
+    if (!roleName) return;
+    setIsGenerating(true);
+    const data = await callGemini(
+      `Jsi HR expert. Vygeneruj 20 odborných testových otázek pro pozici "${roleName}". 
+      Každá otázka musí mít 4 možnosti odpovědi a jednu správnou.
+      Vrať POUZE JSON pole: [{"id":1,"question":"text","options":["A","B","C","D"],"correct":0},...] 
+      kde "correct" je index správné odpovědi (0-3). Otázky musí být v češtině a relevantní pro danou pozici.`,
+      "", true
+    );
+    if (data && Array.isArray(data)) {
+      setQuestions(data.map((q, i) => ({ ...q, id: i + 1 })));
+    } else {
+      alert('Nepodařilo se vygenerovat otázky. Zkuste to znovu.');
+    }
+    setIsGenerating(false);
+  };
+
+  const handleSave = () => {
+    if (!roleName) { alert('Zadejte název pozice.'); return; }
+    const filled = questions.filter(q => q.question.trim());
+    if (filled.length < 5) { alert('Vyplňte alespoň 5 otázek.'); return; }
+    onSave({ id: `custom_${Date.now()}`, label: roleName, icon: Briefcase, questions: filled });
+    setRoleName('');
+    setQuestions(Array.from({ length: 20 }, (_, i) => ({ id: i + 1, question: '', options: ['', '', '', ''], correct: 0 })));
+    setActiveQ(0);
+    onClose();
+  };
+
+  const updateQ = (field, value) => {
+    setQuestions(prev => prev.map((q, i) => i === activeQ ? { ...q, [field]: value } : q));
+  };
+  const updateOption = (optIdx, value) => {
+    setQuestions(prev => prev.map((q, i) => {
+      if (i !== activeQ) return q;
+      const newOpts = [...q.options]; newOpts[optIdx] = value; return { ...q, options: newOpts };
+    }));
+  };
+
+  if (!isOpen) return null;
+  const currentQ = questions[activeQ];
+  const filledCount = questions.filter(q => q.question.trim()).length;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+          <div>
+            <h3 className="font-bold text-lg text-gray-800">Přidat vlastní pozici</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Definujte název a 20 odborných otázek pro 4. část testu</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={24}/></button>
+        </div>
+        <div className="flex flex-col md:flex-row overflow-hidden flex-1">
+          {/* Left - role name + question list */}
+          <div className="md:w-64 border-r border-gray-100 p-4 overflow-y-auto flex-shrink-0 bg-gray-50">
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Název pozice</label>
+              <input type="text" className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#E30074] outline-none" placeholder="Např. IT Projektový manažer" value={roleName} onChange={e => setRoleName(e.target.value)} />
+            </div>
+            <button onClick={handleGenerate} disabled={!roleName || isGenerating} className="w-full mb-4 py-2 text-xs font-bold text-white bg-[#E30074] rounded hover:bg-[#c40064] transition-colors disabled:opacity-50 flex items-center justify-center gap-1">
+              <Sparkles size={13}/>{isGenerating ? 'Generuji AI...' : 'Generovat AI otázky'}
+            </button>
+            <div className="space-y-1">
+              {questions.map((q, i) => (
+                <button key={i} onClick={() => setActiveQ(i)} className={`w-full text-left p-2 rounded text-xs transition-all ${activeQ === i ? 'bg-[#E30074] text-white' : q.question.trim() ? 'bg-green-50 text-green-700 hover:bg-green-100' : 'bg-white text-gray-500 hover:bg-gray-100'}`}>
+                  <span className="font-bold mr-1">{i + 1}.</span>{q.question.trim() ? q.question.substring(0, 30) + (q.question.length > 30 ? '...' : '') : 'Prázdná otázka'}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Right - question editor */}
+          <div className="flex-1 p-5 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-bold text-gray-800">Otázka {activeQ + 1} / 20</h4>
+              <span className="text-xs text-gray-400">{filledCount} vyplněno</span>
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-600 mb-1 uppercase">Text otázky</label>
+              <textarea className="w-full border border-gray-300 rounded p-3 text-sm focus:border-[#E30074] outline-none h-20 resize-none" placeholder="Napište otázku..." value={currentQ.question} onChange={e => updateQ('question', e.target.value)}/>
+            </div>
+            <div className="mb-4">
+              <label className="block text-xs font-bold text-gray-600 mb-2 uppercase">Možnosti odpovědí</label>
+              <div className="space-y-2">
+                {currentQ.options.map((opt, oi) => (
+                  <div key={oi} className="flex items-center gap-2">
+                    <button onClick={() => updateQ('correct', oi)} className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-all ${currentQ.correct === oi ? 'border-green-500 bg-green-500' : 'border-gray-300 hover:border-green-400'}`}>
+                      {currentQ.correct === oi && <CheckCircle size={14} className="text-white m-auto"/>}
+                    </button>
+                    <input type="text" className="flex-1 border border-gray-200 rounded p-2 text-sm focus:border-[#E30074] outline-none" placeholder={`Možnost ${String.fromCharCode(65 + oi)}`} value={opt} onChange={e => updateOption(oi, e.target.value)}/>
+                    {currentQ.correct === oi && <span className="text-[10px] text-green-600 font-bold whitespace-nowrap">SPRÁVNÁ</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              {activeQ > 0 && <button onClick={() => setActiveQ(p => p - 1)} className="flex-1 py-2 text-sm border border-gray-200 rounded hover:bg-gray-50">← Předchozí</button>}
+              {activeQ < 19 && <button onClick={() => setActiveQ(p => p + 1)} className="flex-1 py-2 text-sm border border-gray-200 rounded hover:bg-gray-50">Další →</button>}
+            </div>
+          </div>
+        </div>
+        <div className="p-4 border-t border-gray-100 flex justify-between items-center bg-gray-50">
+          <span className="text-xs text-gray-500">{filledCount} / 20 otázek vyplněno</span>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded hover:bg-gray-100">Zrušit</button>
+            <button onClick={handleSave} disabled={!roleName || filledCount < 5} className="px-6 py-2 text-sm font-bold text-white bg-[#E30074] rounded hover:bg-[#c40064] transition-colors disabled:opacity-50">Uložit pozici</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- ADMIN VIEW ---
 const AdminView = ({
   candidates, benchmarks, activeCandidateId, setActiveCandidateId,
@@ -580,7 +693,8 @@ const AdminView = ({
   selectedBenchmarkId, setSelectedBenchmarkId, showBenchmarkModal, setShowBenchmarkModal,
   showInviteModal, setShowInviteModal, inviteForm, setInviteForm, generatedLink, setGeneratedLink,
   handleGenerateInvite, isGeneratingLink, newRoleDescription, setNewRoleDescription,
-  generateBenchmark, isGeneratingBenchmark, setAppMode, handleSimulateLinkClick, onDeleteCandidate
+  generateBenchmark, isGeneratingBenchmark, setAppMode, handleSimulateLinkClick, onDeleteCandidate,
+  allRoles, customRoles, onAddCustomRole, onDeleteCustomRole, onExportPdf
 }) => {
   const viewCandidate = candidates.find(c => c.id === activeCandidateId);
 
@@ -607,13 +721,13 @@ const AdminView = ({
 
   return (
     <div className={`min-h-screen ${S_BG} font-sans text-gray-900 pb-12`}>
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+      <header className="bg-gray-700 border-b border-gray-600 sticky top-0 z-40">
         <div className="max-w-[1400px] mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-8" />
-            <span className="text-xs text-white bg-gray-900 px-2 py-1 rounded hidden sm:inline-block">ADMINISTRACE</span>
+            <span className="text-xs text-gray-300 bg-gray-600 px-2 py-1 rounded hidden sm:inline-block">ADMINISTRACE</span>
           </div>
-          <button onClick={() => setAppMode('landing')} className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-2">
+          <button onClick={() => setAppMode('landing')} className="text-sm font-medium text-gray-300 hover:text-white flex items-center gap-2">
             <LogOut size={16} /> Odhlásit
           </button>
         </div>
@@ -630,7 +744,7 @@ const AdminView = ({
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                   <div className="flex justify-between items-start mb-6">
                     <div>
-                      <Badge>{ROLES.find(r => r.id === viewCandidate.roleId)?.label}</Badge>
+                      <Badge>{allRoles.find(r => r.id === viewCandidate.roleId)?.label || viewCandidate.roleId}</Badge>
                       <h1 className="text-3xl font-bold text-gray-900">{viewCandidate.name}</h1>
                       <p className="text-gray-500 mt-1">Test dokončen: {viewCandidate.date}</p>
                     </div>
@@ -653,7 +767,7 @@ const AdminView = ({
                       </select>
                     </div>
                     <div className="space-y-5">
-                      {METRIC_LABELS.filter(m => !(m.key === 'specific' && ROLES.find(r => r.id === viewCandidate.roleId)?.noSpecific)).map(m => {
+                      {METRIC_LABELS.filter(m => !(m.key === 'specific' && allRoles.find(r => r.id === viewCandidate.roleId)?.noSpecific)).map(m => {
                         const candVal = viewCandidate.results?.[m.key] ?? 0;
                         const benchVal = activeBenchmark?.metrics?.[m.key] ?? 0;
                         const diff = candVal - benchVal;
@@ -703,12 +817,13 @@ const AdminView = ({
                   <h3 className="font-bold text-gray-900 mb-4">Detaily Kandidáta</h3>
                   <div className="space-y-4 text-sm">
                     <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-500">Jméno</span><span className="font-medium">{viewCandidate.name}</span></div>
-                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-500">Role</span><span className="font-medium">{ROLES.find(r => r.id === viewCandidate.roleId)?.label}</span></div>
+                    <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-500">Role</span><span className="font-medium">{allRoles.find(r => r.id === viewCandidate.roleId)?.label || viewCandidate.roleId}</span></div>
                     <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-500">Shoda s bench.</span><span className="font-bold text-[#E30074]">{calculateMatch(viewCandidate.results, activeBenchmark?.metrics)}%</span></div>
                     <div className="flex justify-between py-2 border-b border-gray-100"><span className="text-gray-500">Doba trvání</span><span className="font-bold">{formatTime(viewCandidate.timeTaken)}</span></div>
                   </div>
                   <div className="mt-6 pt-6 border-t border-gray-100 space-y-3">
                     <ButtonPrimary onClick={() => handlePromoteToBenchmark(viewCandidate)} icon={BarChart2}>Nastavit jako Benchmark</ButtonPrimary>
+                    <ButtonPrimary onClick={() => onExportPdf(viewCandidate, activeBenchmark, aiAnalysis)} icon={Download} colorClass="bg-gray-700 hover:bg-gray-800">Exportovat PDF</ButtonPrimary>
                     <button className="w-full py-3 text-sm font-bold text-red-600 border border-red-200 rounded hover:bg-red-50">Zamítnout kandidáta</button>
                   </div>
                 </div>
@@ -719,17 +834,44 @@ const AdminView = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-3 space-y-6">
               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-4">Aktivní Benchmarky</h3>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                  {benchmarks.map(b => (
-                    <div key={b.id} className="text-sm border-b border-gray-100 pb-2 last:border-0">
-                      <div className="font-semibold">{b.role}</div>
-                      <div className="text-xs text-gray-500 mt-1">IQ: {b.metrics.iq} | Spec: {b.metrics.specific}</div>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => setShowBenchmarkModal(true)} className="w-full mt-4 py-2 text-xs font-bold text-[#E30074] border border-[#E30074] rounded hover:bg-[#E30074] hover:text-white transition-colors flex items-center justify-center gap-1">
-                  <Plus size={14} /> NOVÝ PROFIL
+                <h3 className="font-bold text-gray-900 mb-3">Benchmarky</h3>
+                {benchmarks.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic mb-3">Zatím žádné benchmarky. Přidejte první.</p>
+                ) : (
+                  <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 mb-3">
+                    {benchmarks.map(b => (
+                      <div key={b.id} className="text-sm border-b border-gray-100 pb-2 last:border-0">
+                        <div className="font-semibold">{b.role}</div>
+                        <div className="text-xs text-gray-500 mt-1">IQ: {b.metrics.iq} | Integrita: {b.metrics.integrity}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={() => setShowBenchmarkModal(true)} className="w-full py-2 text-xs font-bold text-[#E30074] border border-[#E30074] rounded hover:bg-[#E30074] hover:text-white transition-colors flex items-center justify-center gap-1">
+                  <Plus size={14} /> NOVÝ BENCHMARK
+                </button>
+              </div>
+
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-900 mb-3">Vlastní pozice</h3>
+                <p className="text-xs text-gray-400 mb-3">Pozice s vlastními odbornými otázkami pro 4. část testu.</p>
+                {customRoles.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic mb-3">Zatím žádné vlastní pozice.</p>
+                ) : (
+                  <div className="space-y-2 mb-3 max-h-[200px] overflow-y-auto pr-1">
+                    {customRoles.map(r => (
+                      <div key={r.id} className="flex items-center justify-between text-sm border border-gray-100 rounded p-2 bg-gray-50">
+                        <span className="font-medium text-gray-800 truncate">{r.label}</span>
+                        <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                          <span className="text-[10px] text-gray-400">{r.questions?.length || 0}q</span>
+                          <button onClick={() => onDeleteCustomRole(r.id)} className="text-red-400 hover:text-red-600 ml-1"><X size={13}/></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button onClick={() => onAddCustomRole()} className="w-full py-2 text-xs font-bold text-[#E30074] border border-[#E30074] rounded hover:bg-[#E30074] hover:text-white transition-colors flex items-center justify-center gap-1">
+                  <Plus size={14} /> PŘIDAT POZICI
                 </button>
               </div>
             </div>
@@ -748,11 +890,11 @@ const AdminView = ({
                     {candidates.length === 0 ? (
                       <tr><td colSpan="7" className="p-8 text-center text-gray-500">Zatím žádní kandidáti v databázi.</td></tr>
                     ) : candidates.map(c => {
-                      const RoleIcon = ROLES.find(r => r.id === c.roleId)?.icon;
+                      const roleObj = allRoles.find(r => r.id === c.roleId); const RoleIcon = roleObj?.icon || Globe;
                       return (
                         <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="p-4 font-bold text-gray-900">{c.name}</td>
-                          <td className="p-4 text-gray-600"><div className="flex items-center gap-2">{RoleIcon && <RoleIcon size={16} />}{ROLES.find(r => r.id === c.roleId)?.label}</div></td>
+                          <td className="p-4 text-gray-600"><div className="flex items-center gap-2">{RoleIcon && <RoleIcon size={16} />}{allRoles.find(r => r.id === c.roleId)?.label || c.roleId}</div></td>
                           <td className="p-4 text-gray-500">
                             <div className="text-xs">{c.date}</div>
                             {c.linkGeneratedAt && <div className="text-[10px] text-gray-400">{new Date(c.linkGeneratedAt).toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>}
@@ -787,7 +929,7 @@ const AdminView = ({
             <div><label className="block text-sm font-bold text-gray-700 mb-1">Jméno a Příjmení</label><input type="text" className="w-full border border-gray-300 rounded p-3 focus:border-[#E30074] outline-none" placeholder="Např. Petr Nový" value={inviteForm.name} onChange={e => setInviteForm({ ...inviteForm, name: e.target.value })} /></div>
             <div><label className="block text-sm font-bold text-gray-700 mb-1">Pozice / Role</label>
               <div className="grid grid-cols-2 gap-2">
-                {ROLES.map(role => (<button key={role.id} onClick={() => setInviteForm({ ...inviteForm, role: role.id })} className={`p-3 text-sm rounded border flex flex-col items-center gap-2 transition-all ${inviteForm.role === role.id ? 'border-[#E30074] bg-pink-50 text-[#E30074] font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}><role.icon size={20} />{role.label}</button>))}
+                {allRoles.map(role => { const RIcon = role.icon || Globe; return (<button key={role.id} onClick={() => setInviteForm({ ...inviteForm, role: role.id })} className={`p-3 text-sm rounded border flex flex-col items-center gap-2 transition-all ${inviteForm.role === role.id ? 'border-[#E30074] bg-pink-50 text-[#E30074] font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}><RIcon size={20} />{role.label}</button>); })}
               </div>
             </div>
             <ButtonPrimary onClick={handleGenerateInvite} disabled={!inviteForm.name || isGeneratingLink}>
@@ -821,7 +963,7 @@ const AdminView = ({
 };
 
 // --- CANDIDATE VIEW ---
-const CandidateView = ({ currentCandidate, setAppMode, onFinish }) => {
+const CandidateView = ({ currentCandidate, setAppMode, onFinish, allRoles }) => {
   const [testStarted, setTestStarted] = useState(false);
 
   if (currentCandidate.status === 'completed') {
@@ -853,7 +995,7 @@ const CandidateView = ({ currentCandidate, setAppMode, onFinish }) => {
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="bg-gray-900 p-8 text-white text-center">
               <h1 className="text-3xl font-bold mb-2">Vítejte u výběrového řízení</h1>
-              <p className="text-gray-400">Pozice: <span className="text-[#E30074] font-bold">{ROLES.find(r => r.id === currentCandidate.roleId)?.label}</span></p>
+              <p className="text-gray-400">Pozice: <span className="text-[#E30074] font-bold">{allRoles.find(r => r.id === currentCandidate.roleId)?.label || currentCandidate.roleId}</span></p>
             </div>
             <div className="p-8">
               <h2 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2"><Info className="text-[#E30074]" size={20} /> Co vás čeká?</h2>
@@ -887,9 +1029,9 @@ const CandidateView = ({ currentCandidate, setAppMode, onFinish }) => {
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Vstupní Assessment</h1>
-          <p className="text-gray-500">Role: <span className="font-bold text-black">{ROLES.find(r => r.id === currentCandidate.roleId)?.label}</span></p>
+          <p className="text-gray-500">Role: <span className="font-bold text-black">{allRoles.find(r => r.id === currentCandidate.roleId)?.label || currentCandidate.roleId}</span></p>
         </div>
-        <TestRunner roleId={currentCandidate.roleId} onComplete={onFinish} />
+        <TestRunner roleId={currentCandidate.roleId} onComplete={onFinish} isNoSpecificRole={allRoles.find(r => r.id === currentCandidate.roleId)?.noSpecific || false} />
       </div>
     </div>
   );
@@ -912,6 +1054,9 @@ export default function TalentMatchApp() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [customRoles, setCustomRoles] = useState([]);
+  const [showCustomRoleModal, setShowCustomRoleModal] = useState(false);
+  const allRoles = [...BASE_ROLES, ...customRoles];
 
   // Detekce odkazu pro kandidáta (?test=ID) – jen jednou při načtení
   useEffect(() => {
@@ -1019,6 +1164,72 @@ export default function TalentMatchApp() {
     }
   };
 
+  const handleExportPdf = (candidate, benchmark, analysis) => {
+    const roleName = allRoles.find(r => r.id === candidate.roleId)?.label || candidate.roleId;
+    const matchPct = calculateMatch(candidate.results, benchmark?.metrics);
+    const metricRows = [
+      { label: 'IQ / Logické myšlení', val: candidate.results?.iq ?? '-' },
+      { label: 'Odbornost', val: candidate.results?.specific ?? '-' },
+      { label: 'Integrita', val: candidate.results?.integrity ?? '-' },
+      { label: 'Svědomitost', val: candidate.results?.conscientiousness ?? '-' },
+      { label: 'Otevřenost', val: candidate.results?.openness ?? '-' },
+      { label: 'Extraverze', val: candidate.results?.extraversion ?? '-' },
+      { label: 'Přívětivost', val: candidate.results?.agreeableness ?? '-' },
+      { label: 'Neuroticismus', val: candidate.results?.neuroticism ?? '-' },
+    ].filter(m => m.val !== '-' || !allRoles.find(r => r.id === candidate.roleId)?.noSpecific);
+
+    const html = `<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"/><title>Report – ${candidate.name}</title>
+    <style>
+      body{font-family:Arial,sans-serif;margin:0;padding:40px;color:#1a1a1a;font-size:13px;}
+      h1{color:#E30074;font-size:22px;margin-bottom:4px;}
+      h2{font-size:14px;color:#555;font-weight:normal;margin-top:0;}
+      .header{border-bottom:3px solid #E30074;padding-bottom:16px;margin-bottom:24px;}
+      .logo{font-size:18px;font-weight:bold;color:#E30074;margin-bottom:8px;}
+      .score-box{background:#fdf2f8;border:2px solid #E30074;border-radius:8px;padding:16px;text-align:center;margin-bottom:24px;}
+      .score-num{font-size:48px;font-weight:bold;color:#E30074;}
+      .section{margin-bottom:20px;}
+      .section-title{font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;}
+      .metric-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f5f5f5;}
+      .metric-bar-wrap{flex:1;margin:0 12px;background:#eee;height:8px;border-radius:4px;overflow:hidden;}
+      .metric-bar{height:8px;background:#E30074;border-radius:4px;}
+      .metric-val{font-weight:bold;width:30px;text-align:right;}
+      .metric-label{width:140px;color:#555;}
+      .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;}
+      .info-item{background:#f9f9f9;border-radius:6px;padding:10px;}
+      .info-item label{display:block;font-size:10px;color:#888;text-transform:uppercase;margin-bottom:2px;}
+      .info-item span{font-weight:bold;font-size:14px;}
+      .analysis{background:#fdf2f8;border-left:4px solid #E30074;padding:14px;border-radius:0 8px 8px 0;white-space:pre-wrap;line-height:1.6;font-size:12px;}
+      .footer{margin-top:40px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:10px;color:#aaa;}
+      @media print{body{padding:20px;}}
+    </style></head><body>
+    <div class="header">
+      <div class="logo">TalentMatch · smarty.cz</div>
+      <h1>${candidate.name}</h1>
+      <h2>Pozice: ${roleName} &nbsp;|&nbsp; Test dokončen: ${candidate.date}</h2>
+    </div>
+    <div class="score-box">
+      <div style="font-size:12px;color:#888;margin-bottom:4px;">CELKOVÉ SKÓRE</div>
+      <div class="score-num">${candidate.score}<span style="font-size:20px;color:#aaa;">/100</span></div>
+      ${benchmark ? `<div style="font-size:12px;color:#555;margin-top:8px;">Shoda s benchmarkem „${benchmark.role}": <strong>${matchPct}%</strong></div>` : ''}
+    </div>
+    <div class="info-grid">
+      <div class="info-item"><label>Doba trvání testu</label><span>${formatTime(candidate.timeTaken)}</span></div>
+      <div class="info-item"><label>Datum testu</label><span>${candidate.date}</span></div>
+    </div>
+    <div class="section">
+      <div class="section-title">Výsledky dle kategorií</div>
+      ${metricRows.map(m => `<div class="metric-row"><span class="metric-label">${m.label}</span><div class="metric-bar-wrap"><div class="metric-bar" style="width:${m.val}%"></div></div><span class="metric-val">${m.val}</span></div>`).join('')}
+    </div>
+    ${analysis ? `<div class="section"><div class="section-title">AI Analýza</div><div class="analysis">${analysis}</div></div>` : ''}
+    <div class="footer">Vygenerováno systémem TalentMatch · ${new Date().toLocaleDateString('cs-CZ')} · smarty.cz</div>
+    </body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.print(); };
+  };
+
   const handleDeleteCandidate = async (candidateId, candidateName) => {
     if (!window.confirm(`Opravdu chcete smazat záznam kandidáta "${candidateName}"? Tato akce je nevratná.`)) return;
     try {
@@ -1027,6 +1238,20 @@ export default function TalentMatchApp() {
       console.error("Chyba při mazání:", e);
       alert("Nepodařilo se smazat záznam.");
     }
+  };
+
+  const handleAddCustomRole = () => setShowCustomRoleModal(true);
+
+  const handleSaveCustomRole = (newRole) => {
+    setCustomRoles(prev => [...prev, newRole]);
+    // Also add questions to QUESTIONS.specific dynamically
+    QUESTIONS.specific[newRole.id] = newRole.questions || [];
+  };
+
+  const handleDeleteCustomRole = (roleId) => {
+    if (!window.confirm('Smazat tuto vlastní pozici?')) return;
+    setCustomRoles(prev => prev.filter(r => r.id !== roleId));
+    delete QUESTIONS.specific[roleId];
   };
 
   const handlePromoteToBenchmark = (candidate) => {
@@ -1108,13 +1333,20 @@ Napiš strukturovaný report v češtině:
           generateBenchmark={generateBenchmark}
           isGeneratingBenchmark={isGeneratingBenchmark}
           setAppMode={setAppMode}
+          allRoles={allRoles}
+          customRoles={customRoles}
+          onAddCustomRole={handleAddCustomRole}
+          onDeleteCustomRole={handleDeleteCustomRole}
+          onExportPdf={handleExportPdf}
         />
+        <CustomRoleModal isOpen={showCustomRoleModal} onClose={() => setShowCustomRoleModal(false)} onSave={handleSaveCustomRole} />
       )}
       {appMode === 'candidate' && currentCandidate && (
         <CandidateView
           currentCandidate={currentCandidate}
           setAppMode={setAppMode}
           onFinish={handleCandidateFinish}
+          allRoles={allRoles}
         />
       )}
     </>
