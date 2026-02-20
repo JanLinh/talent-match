@@ -19,8 +19,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const db = getFirestore(app);
 
 // --- GEMINI API ---
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
-``;
+const GEMINI_API_KEY = "AIzaSyDcUtAzaJfhPxogZTzL1urDJ4EFVEKVoKM";
 
 async function callGemini(prompt, systemInstruction = "", isJson = false) {
   try {
@@ -35,7 +34,7 @@ async function callGemini(prompt, systemInstruction = "", isJson = false) {
     let delay = 1000;
     for (let i = 0; i < maxRetries; i++) {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
       );
       if (response.ok) {
@@ -113,26 +112,26 @@ const QUESTIONS = {
     { id: 30, type: 'big5', trait: 'agreeableness', question: 'Rád pomáhám ostatním s jejich problémy.' }
   ],
   psycho: [
-    { id: 1, type: 'integrity', question: 'Kolega si přivlastnil zásluhy za vaši práci. Reakce?', options: [{ text: 'Konfrontuji ho.', score: 40 }, { text: 'Promluvím si v soukromí.', score: 100 }, { text: 'Nechám to být.', score: 20 }, { text: 'Řeknu to šéfovi.', score: 60 }] },
-    { id: 2, type: 'integrity', question: 'Najdete chybu v reportu hodinu před odevzdáním.', options: [{ text: 'Odevzdám s chybou.', score: 0 }, { text: 'Upravím čísla na oko.', score: 10 }, { text: 'Oznámím zpoždění a opravím.', score: 100 }, { text: 'Požádám kolegu.', score: 30 }] },
-    { id: 3, type: 'integrity', question: 'Kolega krade kancelářské potřeby.', options: [{ text: 'Nahlásím to.', score: 80 }, { text: 'Ignoruji to.', score: 20 }, { text: 'Zeptám se na povolení.', score: 90 }, { text: 'Vezmu si taky.', score: 0 }] },
-    { id: 4, type: 'integrity', question: 'Zákazník omylem zaplatil víc.', options: [{ text: 'Nechám si to.', score: 0 }, { text: 'Vrátím to.', score: 100 }, { text: 'Dám do kasy jako přebytek.', score: 80 }, { text: 'Koupím svačinu týmu.', score: 40 }] },
-    { id: 5, type: 'integrity', question: 'Šéf chce porušit pravidla.', options: [{ text: 'Udělám to.', score: 20 }, { text: 'Odmítnu.', score: 100 }, { text: 'Udělám a nahlásím.', score: 50 }, { text: 'Změním pravidla.', score: 0 }] },
-    { id: 6, type: 'integrity', question: 'Kolega nestíhá termíny.', options: [{ text: 'Udělám to za něj.', score: 30 }, { text: 'Nabídnu pomoc s organizací.', score: 100 }, { text: 'Ignoruji.', score: 0 }, { text: 'Stěžuji si.', score: 20 }] },
-    { id: 7, type: 'integrity', question: 'Víte o propouštění, kolega se ptá.', options: [{ text: 'Řeknu vše.', score: 0 }, { text: 'Zapřu to.', score: 60 }, { text: 'Odkážu na důvěrnost.', score: 100 }, { text: 'Naznačím.', score: 40 }] },
-    { id: 8, type: 'integrity', question: 'Peněženka na chodbě.', options: [{ text: 'Recepce.', score: 100 }, { text: 'Nechat tam.', score: 20 }, { text: 'Hledat majitele sám.', score: 90 }, { text: 'Vzít hotovost.', score: 0 }] },
-    { id: 9, type: 'integrity', question: 'Nedodělaná práce v pátek.', options: [{ text: 'Jdu domů, počká to.', score: 20 }, { text: 'Zůstanu déle.', score: 100 }, { text: 'Vezmu si domů.', score: 80 }, { text: 'Hodím na kolegu.', score: 0 }] },
-    { id: 10, type: 'integrity', question: 'Kolega pomlouvá firmu na sociálních sítích.', options: [{ text: 'Přidám se.', score: 0 }, { text: 'Upozorním ho na riziko.', score: 100 }, { text: 'Nahlásím HR.', score: 60 }, { text: 'Ignoruji.', score: 40 }] },
-    { id: 11, type: 'integrity', question: 'Zákazník je hrubý.', options: [{ text: 'Jsem taky hrubý.', score: 0 }, { text: 'Zachovám klid.', score: 100 }, { text: 'Rozbrečím se.', score: 10 }, { text: 'Ignoruji ho.', score: 30 }] },
-    { id: 12, type: 'integrity', question: 'Nestíháte projekt.', options: [{ text: 'Zamlčím to.', score: 0 }, { text: 'Řeknu to včas šéfovi.', score: 100 }, { text: 'Pracuji tajně v noci.', score: 60 }, { text: 'Obviním kolegy.', score: 0 }] },
-    { id: 13, type: 'integrity', question: 'Kolega smrdí alkoholem.', options: [{ text: 'Zeptám se ho soukromě.', score: 100 }, { text: 'Nahlásím okamžitě.', score: 60 }, { text: 'Pomlouvám ho.', score: 0 }, { text: 'Ignoruji.', score: 20 }] },
-    { id: 14, type: 'integrity', question: 'Máte možnost si přilepšit na úkor klienta.', options: [{ text: 'Nikdy.', score: 100 }, { text: 'Jen když to nepozná.', score: 0 }, { text: 'Jen málo.', score: 10 }, { text: 'Pokud to dělají všichni.', score: 20 }] },
-    { id: 15, type: 'integrity', question: 'Nuda v práci.', options: [{ text: 'Hraju hry.', score: 0 }, { text: 'Hledám si práci navíc.', score: 100 }, { text: 'Jdu dřív domů.', score: 10 }, { text: 'Spím.', score: 0 }] },
-    { id: 16, type: 'integrity', question: 'Konkurence volá a chce info.', options: [{ text: 'Dám info za peníze.', score: 0 }, { text: 'Odmítnu.', score: 100 }, { text: 'Dám falešné info.', score: 40 }, { text: 'Zavěsím.', score: 80 }] },
-    { id: 17, type: 'integrity', question: 'Rozbité firemní auto.', options: [{ text: 'Zatajím to.', score: 0 }, { text: 'Přiznám se.', score: 100 }, { text: 'Svedu na neznámého pachatele.', score: 10 }, { text: 'Opravím tajně.', score: 50 }] },
-    { id: 18, type: 'integrity', question: 'Sexuální narážky kolegy.', options: [{ text: 'Směju se.', score: 20 }, { text: 'Jasně vymezím hranice.', score: 100 }, { text: 'Oplatím to.', score: 10 }, { text: 'Trpím mlčky.', score: 0 }] },
-    { id: 19, type: 'integrity', question: 'Dárek od dodavatele.', options: [{ text: 'Vezmu si domů.', score: 10 }, { text: 'Odmítnu/Nahlásím dle pravidel.', score: 100 }, { text: 'Rozdám v týmu.', score: 50 }, { text: 'Vyhodím.', score: 30 }] },
-    { id: 20, type: 'integrity', question: 'Vidíte šikanu na pracovišti.', options: [{ text: 'Zasáhnu/Nahlásím.', score: 100 }, { text: 'Nedívám se.', score: 0 }, { text: 'Natáčím si to.', score: 0 }, { text: 'Fandím.', score: 0 }] }
+    { id: 1, type: 'integrity', question: 'Váš projekt byl úspěšný. Na poradě šéf pochválí hlavně kolegu, který přidal jen pár komentářů. Co uděláte?', options: [{ text: 'Nic, nechci působit ješitně.', score: 30 }, { text: 'Soukromě požádám šéfa o zpětnou vazbu a zmíním svůj přínos.', score: 100 }, { text: 'Veřejně opravím šéfa před týmem.', score: 40 }, { text: 'Napíšu šéfovi e-mail se seznamem toho, co jsem udělal já.', score: 70 }] },
+    { id: 2, type: 'integrity', question: 'Hodinu před odevzdáním klíčové analýzy zjistíte, že jste pracoval se špatnými daty. Oprava zabere 3 hodiny. Co uděláte?', options: [{ text: 'Odevzdám včas, chybu nahlásím dodatečně.', score: 50 }, { text: 'Ihned informuji nadřízeného, vysvětlím situaci a navrhnu realistický termín.', score: 100 }, { text: 'Opravím co stihnu a zbytek odhladím.', score: 20 }, { text: 'Požádám kolegu, ať to zkontroluje a podepíše za mě.', score: 0 }] },
+    { id: 3, type: 'integrity', question: 'Dostanete lukrativní pracovní nabídku od konkurence. Váš šéf vás právě povýšil a věří vám. Co uděláte?', options: [{ text: 'Odejdu bez řečí – business je business.', score: 40 }, { text: 'Řeknu šéfovi o nabídce a dám mu šanci reagovat.', score: 100 }, { text: 'Nastoupím ke konkurenci, ale dokončím rozjednané projekty.', score: 60 }, { text: 'Použiji nabídku jako páku na zvýšení platu, ale jít neplánuji.', score: 20 }] },
+    { id: 4, type: 'integrity', question: 'Kolega vás požádá, abyste mu kryl záda – tvrdil nadřízenému, že byl na schůzce s klientem, ale ve skutečnosti řešil osobní věc. Co uděláte?', options: [{ text: 'Potvrdím jeho verzi, je to přece kamarád.', score: 0 }, { text: 'Odmítnu lhát, ale řeknu mu, ať si věc vyřeší sám.', score: 100 }, { text: 'Nic neřeknu, ale budu si to pamatovat.', score: 30 }, { text: 'Rovnou to nahlásím nadřízenému.', score: 60 }] },
+    { id: 5, type: 'integrity', question: 'Při vyúčtování cestovních nákladů zjistíte, že systém vám omylem připsal o 2 000 Kč navíc. Firma si toho pravděpodobně nevšimne. Co uděláte?', options: [{ text: 'Nechám si to, systém přece chybuje.', score: 0 }, { text: 'Nahlásím přeplatek účetní a vrátím peníze.', score: 100 }, { text: 'Počkám, jestli se někdo ozve.', score: 10 }, { text: 'Použiji je na firemní oběd pro tým.', score: 20 }] },
+    { id: 6, type: 'integrity', question: 'Manažer vás požádá, abyste v prezentaci pro klienta „trochu přikrášlili" výsledky, které jsou ve skutečnosti průměrné. Co uděláte?', options: [{ text: 'Udělám to – šéf ví nejlíp.', score: 10 }, { text: 'Nabídnu, že výsledky zasadím do lepšího kontextu, ale bez zavádějících čísel.', score: 100 }, { text: 'Odmítnu a pohrozím stížností.', score: 50 }, { text: 'Udělám to, ale do souboru skryji původní data.', score: 30 }] },
+    { id: 7, type: 'integrity', question: 'Víte jako první o chystané reorganizaci, při které přijde váš oblíbený kolega o místo. Informace jsou důvěrné. Co uděláte?', options: [{ text: 'Řeknu mu to, ať se může připravit.', score: 30 }, { text: 'Zachovám mlčenlivost, ale poradím mu obecně, ať si aktualizuje životopis.', score: 100 }, { text: 'Zachovám mlčenlivost a neřeknu nic.', score: 70 }, { text: 'Anonymně mu pošlu tip e-mailem.', score: 20 }] },
+    { id: 8, type: 'integrity', question: 'Jste v časovém stresu a váš kolega dělá opakovaně chyby, které musíte opravovat. Jak situaci řešíte?', options: [{ text: 'Tiše opravuji a doufám, že se zlepší.', score: 20 }, { text: 'Promluvím s ním přímo a konstruktivně, nabídnu konkrétní pomoc.', score: 100 }, { text: 'Stěžuji si manažerovi, ať to vyřeší za mě.', score: 40 }, { text: 'Přestanu jeho chyby opravovat, ať pocítí důsledky.', score: 30 }] },
+    { id: 9, type: 'integrity', question: 'V pátek ve 4 odpoledne dostanete urgentní úkol, který normálně trvá 4 hodiny. Plánujete rodinnou oslavu. Co uděláte?', options: [{ text: 'Odejdu – soukromý život má přednost.', score: 20 }, { text: 'Zavolám domů, vysvětlím situaci a práci dokončím.', score: 100 }, { text: 'Udělám co stihnu za hodinu a zbytek nechám na pondělí.', score: 50 }, { text: 'Deleguji na kolegu bez jeho vědomí.', score: 0 }] },
+    { id: 10, type: 'integrity', question: 'Váš tým nedosáhl cíle. Na poradě šéf hledá viníka. Víte, že hlavní příčinou bylo špatné zadání od vedení. Co uděláte?', options: [{ text: 'Mlčím, nechci si dělat nepřátele.', score: 20 }, { text: 'Klidně a věcně popíšu, kde zadání nebylo jednoznačné a co by šlo příště zlepšit.', score: 100 }, { text: 'Veřejně obviním vedení.', score: 30 }, { text: 'Přijmu zodpovědnost za celý tým, i když to není fér.', score: 60 }] },
+    { id: 11, type: 'integrity', question: 'Během práce z domova zjistíte, že kolega si nechává schůzky v kalendáři, ale ve skutečnosti pracuje pro jiný projekt bokem. Co uděláte?', options: [{ text: 'Nic, není to moje věc.', score: 20 }, { text: 'Soukromě mu řeknu, že to vidím a dám mu šanci situaci napravit.', score: 100 }, { text: 'Anonymně to nahlásím HR.', score: 50 }, { text: 'Zeptám se ho, jestli by mě nezapojil taky.', score: 0 }] },
+    { id: 12, type: 'integrity', question: 'Jste na obchodním jednání a klient se zeptá na slabinu vašeho produktu, o které víte. Vaše firma ji veřejně nepřiznává. Co uděláte?', options: [{ text: 'Popřu, že slabina existuje.', score: 0 }, { text: 'Přiznám slabinu, ale zasadím ji do kontextu a nabídnu řešení.', score: 100 }, { text: 'Téma obratně přesměruji na silné stránky.', score: 60 }, { text: 'Řeknu, že to musím prověřit a odpovím e-mailem.', score: 70 }] },
+    { id: 13, type: 'integrity', question: 'Dostanete přístup k datům, ke kterým byste normálně přístup neměli – omylem vám přidali oprávnění. Data by vám pomohla v práci. Co uděláte?', options: [{ text: 'Využiji je, vždyť k tomu mám přístup.', score: 10 }, { text: 'Nahlásím IT, že mám přístup omylem, a data nepoužiji.', score: 100 }, { text: 'Stáhnu data a pak nahlásím chybu.', score: 0 }, { text: 'Nic, přístup prostě nezneužiji, ale nenahlásím.', score: 40 }] },
+    { id: 14, type: 'integrity', question: 'Váš přímý podřízený je skvělý pracovník, ale víte, že si hledá nové místo. Ovlivní to vaše hodnocení jeho výkonu?', options: [{ text: 'Ano, dám mu horší hodnocení jako motivaci zůstat.', score: 0 }, { text: 'Ne, ohodnotím ho objektivně podle výsledků.', score: 100 }, { text: 'Dám mu skvělé hodnocení, aby odešel spokojený.', score: 30 }, { text: 'Přeřadím ho na méně zajímavé projekty.', score: 10 }] },
+    { id: 15, type: 'integrity', question: 'V práci se nudíte a máte splněno. Zbývají dvě hodiny do konce pracovní doby. Co uděláte?', options: [{ text: 'Procházím sociální sítě – zasloužím si pauzu.', score: 30 }, { text: 'Zeptám se kolegů nebo manažera, kde mohu pomoci, nebo věnuji čas vzdělávání.', score: 100 }, { text: 'Odejdu dřív – práci mám stejně splněnou.', score: 20 }, { text: 'Předstírám práci, aby to tak vypadalo.', score: 0 }] },
+    { id: 16, type: 'integrity', question: 'Zákazník vám nabídne osobní dar (lahev vína) za to, že jste mu pomohli vyřešit problém. Co uděláte?', options: [{ text: 'Vezmu si to, bylo to přece moje úsilí.', score: 30 }, { text: 'Poděkuji, ale vysvětlím firemní politiku a dar odmítnu nebo nahlásím.', score: 100 }, { text: 'Vezmu to a dám to kolegům v kanceláři.', score: 40 }, { text: 'Odmítnu bez vysvětlení, ať klient chápe sám.', score: 60 }] },
+    { id: 17, type: 'integrity', question: 'Při kontrole výdajů zjistíte, že váš oblíbený kolega si opakovaně nechává proplácet soukromé výdaje jako firemní. Jde o menší částky. Co uděláte?', options: [{ text: 'Nic, jsou to malé částky.', score: 0 }, { text: 'Soukromě mu to řeknu a dám mu šanci to napravit.', score: 100 }, { text: 'Anonymně to nahlásím.', score: 60 }, { text: 'Počkám, jestli to někdo jiný odhalí.', score: 10 }] },
+    { id: 18, type: 'integrity', question: 'Váš manažer vás pochválí za výsledek, který byl z 80 % dílem vašeho kolegy. Ten na poradě nebyl. Co uděláte?', options: [{ text: 'Přijmu pochvalu – sám jsem to prezentoval.', score: 10 }, { text: 'Poděkuji a hned doplním, že klíčovou práci odvedl kolega.', score: 100 }, { text: 'Po poradě řeknu kolegovi, ať si sám zajde za šéfem.', score: 50 }, { text: 'Přijmu pochvalu, kolegovi pak poděkuji soukromě.', score: 30 }] },
+    { id: 19, type: 'integrity', question: 'Kolega vás požádá, abyste mu pomohli připravit prezentaci pro jeho vlastní pohovor u jiného zaměstnavatele v pracovní době. Co uděláte?', options: [{ text: 'Pomůžu mu – jsme přece kamarádi.', score: 20 }, { text: 'Odmítnu pomáhat v pracovní době, ale nabídnu pomoc po pracovní době.', score: 100 }, { text: 'Nahlásím to manažerovi.', score: 40 }, { text: 'Pomůžu, ale budu chtít protislužbu.', score: 0 }] },
+    { id: 20, type: 'integrity', question: 'Jste v týmu, který systematicky překračuje termíny. Víte proč – plánování je nerealistické. Šéf to nechce slyšet. Co uděláte?', options: [{ text: 'Přizpůsobím se – šéf má vždy pravdu.', score: 20 }, { text: 'Připravím datový přehled termínů a kapacit a požádám o strukturovaný rozhovor.', score: 100 }, { text: 'Stěžuji si kolegům v kuchyňce.', score: 0 }, { text: 'Anonymně upozorním vyšší vedení.', score: 40 }] }
   ],
   specific: {
     sales: [
@@ -880,7 +879,7 @@ const AdminView = ({
             <div className="lg:col-span-9">
               <div className="flex justify-between items-end mb-6">
                 <div><h1 className="text-3xl font-bold text-gray-900">Kandidáti</h1><p className="text-gray-500 text-sm mt-1">Správa testování a výsledků</p></div>
-                <ButtonPrimary onClick={() => setShowInviteModal(true)} icon={Send} className="w-auto">POZVAT KANDIDÁTA</ButtonPrimary>
+                <ButtonPrimary onClick={() => { setShowInviteModal(true); setInviteForm(f => ({ ...f, role: allRoles[0]?.id || 'general' })); }} icon={Send} className="w-auto">POZVAT KANDIDÁTA</ButtonPrimary>
               </div>
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left border-collapse">
@@ -924,7 +923,7 @@ const AdminView = ({
       </div>
 
       {/* INVITE MODAL */}
-      <Modal isOpen={showInviteModal} onClose={() => { setShowInviteModal(false); setGeneratedLink(null); }} title="Pozvat nového kandidáta">
+      <Modal isOpen={showInviteModal} onClose={() => { setShowInviteModal(false); setGeneratedLink(null); setInviteForm({ name: '', role: allRoles[0]?.id || 'general' }); }} title="Pozvat nového kandidáta">
         {!generatedLink ? (
           <div className="space-y-4">
             <div><label className="block text-sm font-bold text-gray-700 mb-1">Jméno a Příjmení</label><input type="text" className="w-full border border-gray-300 rounded p-3 focus:border-[#E30074] outline-none" placeholder="Např. Petr Nový" value={inviteForm.name} onChange={e => setInviteForm({ ...inviteForm, name: e.target.value })} /></div>
@@ -933,7 +932,7 @@ const AdminView = ({
                 {allRoles.map(role => { const RIcon = role.icon || Globe; return (<button key={role.id} onClick={() => setInviteForm({ ...inviteForm, role: role.id })} className={`p-3 text-sm rounded border flex flex-col items-center gap-2 transition-all ${inviteForm.role === role.id ? 'border-[#E30074] bg-pink-50 text-[#E30074] font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}><RIcon size={20} />{role.label}</button>); })}
               </div>
             </div>
-            <ButtonPrimary onClick={handleGenerateInvite} disabled={!inviteForm.name || isGeneratingLink}>
+            <ButtonPrimary onClick={handleGenerateInvite} disabled={!inviteForm.name || !inviteForm.role || isGeneratingLink}>
               {isGeneratingLink ? 'Generuji...' : 'Generovat Odkaz'}
             </ButtonPrimary>
           </div>
@@ -1048,7 +1047,7 @@ export default function TalentMatchApp() {
   const [selectedBenchmarkId, setSelectedBenchmarkId] = useState(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showBenchmarkModal, setShowBenchmarkModal] = useState(false);
-  const [inviteForm, setInviteForm] = useState({ name: '', role: 'sales' });
+  const [inviteForm, setInviteForm] = useState({ name: '', role: 'general' });
   const [generatedLink, setGeneratedLink] = useState(null);
   const [newRoleDescription, setNewRoleDescription] = useState("");
   const [isGeneratingBenchmark, setIsGeneratingBenchmark] = useState(false);
@@ -1099,7 +1098,7 @@ export default function TalentMatchApp() {
   const handleLogin = (res) => setAppMode(res === 'admin' ? 'admin' : 'landing');
 
   const handleGenerateInvite = async () => {
-    if (!inviteForm.name) return;
+    if (!inviteForm.name || !inviteForm.role) return;
     setIsGeneratingLink(true);
     try {
       const now = new Date();
