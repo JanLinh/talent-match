@@ -58,80 +58,55 @@ const BASE_ROLES = [
 
 const QUESTIONS = {
   iq: [
-    { id: 1, type: 'iq', question: 'Které číslo logicky následuje v řadě: 2, 5, 11, 23, ...?', options: ['44', '45', '47', '46'], correct: 2 },
-    { id: 2, type: 'iq', question: 'Kniha se má ke čtení jako vidlička k:', options: ['Krájení', 'Jídlu', 'Vaření', 'Držení'], correct: 1 },
-    { id: 3, type: 'iq', question: 'Jestliže platí, že „všichni psi jsou zvířata" a „některá zvířata jsou kočky", vyplývá z toho nutně závěr, že „někteří psi jsou kočky"?', options: ['Ano, vyplývá', 'Ne, nevyplývá', 'Nelze určit'], correct: 1 },
-    { id: 4, type: 'iq', question: 'Které slovo nepatří mezi ostatní?', options: ['Paříž', 'Londýn', 'Madrid', 'Evropa'], correct: 3 },
-    { id: 5, type: 'iq', question: 'Cena zboží byla zvýšena o 20% a poté snížena o 20%. Jaká je nová cena oproti původní?', options: ['Stejná', 'Vyšší o 4%', 'Nižší o 4%', 'Nižší o 10%'], correct: 2 },
-    { id: 6, type: 'iq', question: 'Voda : Led :: Mléko : ?', options: ['Sýr', 'Kráva', 'Bílá', 'Tekutina'], correct: 0 },
-    { id: 7, type: 'iq', question: 'Které číslo doplní řadu: 1, 1, 2, 3, 5, 8, ...?', options: ['11', '12', '13', '15'], correct: 2 },
-    { id: 8, type: 'iq', question: 'Pokud otočíte levou rukavici naruby, dostanete:', options: ['Levou rukavici', 'Pravou rukavici', 'Nic', 'Čepici'], correct: 1 },
-    { id: 9, type: 'iq', question: 'Které číslo je polovinou čtvrtiny z jedné desetiny čísla 800?', options: ['2', '5', '8', '10'], correct: 3 },
-    { id: 10, type: 'iq', question: 'Který tvar logicky doplňuje mřížku? (Abstraktní vizuální vzor)', visual: 'matrix', options: ['Tvar A (Plný kruh)', 'Tvar B (Čtverec)', 'Tvar C (Trojúhelník)', 'Tvar D (Hvězda)'], correct: 0 },
-    { id: 11, type: 'iq', question: 'Co je opakem slova "Implicitní"?', options: ['Explicitní', 'Komplikovaný', 'Vnitřní', 'Neznámý'], correct: 0 },
-    { id: 12, type: 'iq', question: '3, 6, 18, 72, ?', options: ['144', '216', '360', '288'], correct: 2 },
-    { id: 13, type: 'iq', question: 'Který den byl včera, pokud pozítří bude čtvrtek?', options: ['Neděle', 'Pondělí', 'Úterý', 'Středa'], correct: 1 },
-    { id: 14, type: 'iq', question: 'Všechny A jsou B. Žádné B není C. Platí, že žádné A není C?', options: ['Ano', 'Ne', 'Nelze určit'], correct: 0 },
-    { id: 15, type: 'iq', question: 'Auto ujede 60 km za hodinu. Jak dlouho mu trvá ujet 150 km?', options: ['2h', '2h 15m', '2h 30m', '3h'], correct: 2 },
-    { id: 16, type: 'iq', question: 'Které písmeno následuje: A, C, E, G, ...?', options: ['H', 'I', 'J', 'K'], correct: 1 },
-    { id: 17, type: 'iq', question: 'Kolikrát se ručičky hodin překryjí mezi 12:00 a 12:00 dalšího dne?', options: ['24x', '22x', '23x', '12x'], correct: 1 },
-    { id: 18, type: 'iq', question: 'Otec je 4x starší než syn. Za 20 let bude jen 2x starší. Kolik je otci?', options: ['30', '36', '40', '44'], correct: 2 },
-    { id: 19, type: 'iq', question: 'Najděte vetřelce: Jablko, Hruška, Mrkev, Pomeranč.', options: ['Jablko', 'Hruška', 'Mrkev', 'Pomeranč'], correct: 2 },
-    { id: 20, type: 'iq', question: 'Pokud "KOLO" kódujeme jako "LPM P", jak zakódujeme "LES"?', options: ['MFT', 'MET', 'KDR', 'MFU'], correct: 0 }
+    { id: 1, type: 'iq', question: 'Mas odhadnout, kolik tenisovych micku se vejde do standardniho osobniho auta. Jak k tomu pristoupis?', options: ['Strelim odhad podle toho, jak velke se mi auto zda.', 'Vyhledam objem interieru v litrech a vydelim ho objemem jednoho micku.', 'Reknu, ze je to nemozne urcit bez presnych pristroju.', 'Zeptam se nekoho, kdo takovy pokus videl na internetu.'], correct: 1 },
+    { id: 2, type: 'iq', question: 'Graf ukazuje silnou souvislost mezi poctem prodanych zmrzlin a poctem pozaru. Co si o tom pomyslis?', options: ['Zmrzlina zpusobuje nepozornost vedouci k pozarum.', 'Prodejci zmrzliny by meli byt proskolen v pozarni ochrane.', 'Hledam treti faktor (napr. horke pocasi), ktery ovlivnuje obe promenne.', 'Je to dukaz, ze tyto trhy jsou na sobe zavisle.'], correct: 2 },
+    { id: 3, type: 'iq', question: 'V kuchynce jsou tri konvice. Konvice A je vzdy plna horke vody, B a C jsou skoro vzdy prazdne. Chces si co nejrychleji zalit caj. Co udelas jako prvni?', options: ['Pouziji konvici A – nejefektivnejsi cesta.', 'Prozkoumam konvici A – proc ji nikdo nepouziva? Mozna je v ni odvapnovac.', 'Doleji vodu do konvice B – lide ji preferuji, radsi cerstve uvari.', 'Zeptam se kolegy: Funguje ta ackova konvice?'], correct: 1 },
+    { id: 4, type: 'iq', question: 'Skladate se na spolecne svaciny. Zjistite, ze penize v pokladnicce konci o dva dny drive nez obvykle. Jak urcis pricinu?', options: ['Zavedu knihu svacin – kazdy zapisuje, co si vzal.', 'Udelam revizi cen – podivam se na uctenky, zda dodavatel nezdrazil.', 'Navrhnu zvysit prispevek – inflace funguje, prostje vybereme vic.', 'Pockam, co udela kolega – pridam se k vetsinoveho nazoru.'], correct: 1 },
+    { id: 5, type: 'iq', question: 'Objednavaš pizzu pro 20 lidi: ctvrtina jsou vegetariani, 3 drzi bezlepkovou dietu, zbytek ji vse. Jakou logiku zvolis?', options: ['Od kazdeho druhu neco – pestry vyber pro vsechny.', '3 bezlepkove, 5 vegetarianskych, zbytek masove – na opacne strane stolu.', '20x Margherita – ji ji skoro kazdy a usetrim cas.', 'Poslu hromadny e-mail, kde si kazdy vybere prichut.'], correct: 1 },
+    { id: 6, type: 'iq', question: 'Doplnte chybejici prvek: A1, C3, F6, J10, ...?', options: ['L12', 'N14', 'O15', 'P16'], correct: 2 },
+    { id: 7, type: 'iq', question: 'Zbozi bylo zlevneno o 20 % a pote nova cena zvysena o 25 %. Jaka je vysledna cena oproti puvodni?', options: ['Je o 5 % vyssi.', 'Je o 5 % nizsi.', 'Je presne stejna jako puvodni.', 'Je o 2 % nizsi.'], correct: 2 },
+    { id: 8, type: 'iq', question: 'Pokud slovo ALGORITMUS zakodujeme jako BMHPSJUMTU, jak zakodujeme slovo DATA?', options: ['EBUB', 'CZSZ', 'CBUB', 'EZSZ'], correct: 0 },
+    { id: 9, type: 'iq', question: 'Pokud 4 stroje vyrobi 4 vyrobky za 4 minuty, za kolik minut vyrobi 100 stroju 100 vyrobku?', options: ['100 minut', '25 minut', '4 minuty', '1 minuta'], correct: 2 },
+    { id: 10, type: 'iq', question: 'Doplnte radu: 1, 1, 2, 3, 5, 8, 13, ...?', options: ['18', '20', '21', '25'], correct: 2 }
   ],
   personality: [
-    { id: 1, type: 'big5', trait: 'extraversion', question: 'Cítím se dobře ve středu pozornosti.' },
-    { id: 2, type: 'big5', trait: 'conscientiousness', question: 'Vždy dokončím práci včas a podle plánu.' },
-    { id: 3, type: 'big5', trait: 'neuroticism', question: 'Často se cítím ve stresu nebo smutný.' },
-    { id: 4, type: 'big5', trait: 'openness', question: 'Mám rád abstraktní myšlenky a filozofické debaty.' },
-    { id: 5, type: 'big5', trait: 'agreeableness', question: 'Snažím se vyjít vstříc každému.' },
-    { id: 6, type: 'big5', trait: 'extraversion', question: 'Mluvím s mnoha různými lidmi na večírcích.' },
-    { id: 7, type: 'big5', trait: 'conscientiousness', question: 'Mám rád pořádek na svém pracovním stole.' },
-    { id: 8, type: 'big5', trait: 'neuroticism', question: 'Snadno mě rozhodí maličkosti.' },
-    { id: 9, type: 'big5', trait: 'openness', question: 'Rád zkouším nová jídla a aktivity.' },
-    { id: 10, type: 'big5', trait: 'agreeableness', question: 'Zajímám se o pocity druhých.' },
-    { id: 11, type: 'big5', trait: 'conscientiousness', question: 'Plním sliby, které dám.' },
-    { id: 12, type: 'big5', trait: 'extraversion', question: 'Jsem raději v pozadí než v čele.' },
-    { id: 13, type: 'big5', trait: 'openness', question: 'Mám bujnou fantazii.' },
-    { id: 14, type: 'big5', trait: 'neuroticism', question: 'Často mám obavy z budoucnosti.' },
-    { id: 15, type: 'big5', trait: 'agreeableness', question: 'Věřím, že lidé jsou v jádru dobří.' },
-    { id: 16, type: 'big5', trait: 'extraversion', question: 'Snadno navazuji přátelství.' },
-    { id: 17, type: 'big5', trait: 'conscientiousness', question: 'Jsem vždy připraven.' },
-    { id: 18, type: 'big5', trait: 'neuroticism', question: 'Mám časté výkyvy nálad.' },
-    { id: 19, type: 'big5', trait: 'openness', question: 'Rád přemýšlím o teoriích.' },
-    { id: 20, type: 'big5', trait: 'agreeableness', question: 'Mám měkké srdce.' },
-    { id: 21, type: 'big5', trait: 'conscientiousness', question: 'Věnuji pozornost detailům.' },
-    { id: 22, type: 'big5', trait: 'extraversion', question: 'Nerada mluvím o sobě.' },
-    { id: 23, type: 'big5', trait: 'neuroticism', question: 'Cítím se často provinile.' },
-    { id: 24, type: 'big5', trait: 'openness', question: 'Rozumím věcem rychle.' },
-    { id: 25, type: 'big5', trait: 'agreeableness', question: 'Respektuji ostatní.' },
-    { id: 26, type: 'big5', trait: 'conscientiousness', question: 'Práci nechávám na poslední chvíli.' },
-    { id: 27, type: 'big5', trait: 'extraversion', question: 'Mám rád rušná místa.' },
-    { id: 28, type: 'big5', trait: 'neuroticism', question: 'Zůstávám v klidu pod tlakem.' },
-    { id: 29, type: 'big5', trait: 'openness', question: 'Mám bohatou slovní zásobu.' },
-    { id: 30, type: 'big5', trait: 'agreeableness', question: 'Rád pomáhám ostatním s jejich problémy.' }
+    { id: 1, type: 'big5', trait: 'conscientiousness', question: 'Kdyz dostanu novy ukol bez detailniho zadani, obvykle...', options: ['zacnu hned pracovat a reseni hledam samostatne v prubehu.', 'nejprve si vyhledam dostupne informace nebo priklady a pak se pustim do prace.', 'nejprve si ujasnim postup a potvrdim si ho s nadrirzenym.', 'poprosim o doplneni zadani a presne instrukce, jak postupovat.'], likertValues: [4, 3, 2, 1] },
+    { id: 2, type: 'big5', trait: 'extraversion', question: 'Kdyz pracuji v tymu, obvykle...', options: ['mluvim hlavne tehdy, kdyz jsem osloven/a.', 'aktivne prispivam svymi napady do diskuse.', 'radeji vice posloucham a premyslim nad diskusi.', 'prirozene prebiram iniciativu v diskusi.'], likertValues: [2, 3, 1, 4] },
+    { id: 3, type: 'big5', trait: 'openness', question: 'Pokud dojde k necekane zmene v praci, obvykle...', options: ['se snazim rychle prizpusobit a najit nove reseni.', 'radeji bych pokracoval/a podle puvodniho planu.', 'potrebuji chvili, nez si na zmenu zvyknu.', 'zmeny beru jako prilezitost naucit se neco noveho.'], likertValues: [3, 1, 2, 4] },
+    { id: 4, type: 'big5', trait: 'openness', question: 'Pri reseni sloziteho problemu obvykle preferuji...', options: ['vyuzit postupy, ktere se uz v minulosti osvedcily.', 'hledat kreativni nebo netradicni reseni.', 'pozadat o radu zkusenejsi osobu.', 'kombinovat zname postupy s novymi napady.'], likertValues: [2, 4, 1, 3] },
+    { id: 5, type: 'big5', trait: 'agreeableness', question: 'Kdyz pracuji s lidmi, kteri se mnou nesouhlasi, obvykle...', options: ['se snazim pochopit jejich pohled na vec.', 'hledam kompromisni reseni.', 'radeji se do diskuse prilis nepoustim.', 'snazim se jasne obhajit svuj nazor.'], likertValues: [4, 3, 1, 2] },
+    { id: 6, type: 'big5', trait: 'extraversion', question: 'Na pracovnich nebo spolecenskych setkanich s novymi lidmi obvykle...', options: ['spise pozoruji a zapojuji se az pozdeji.', 'bez vetsich problemu konversuji, kdyz me nekdo oslovi.', 'snadno navazuji konverzaci s ostatnimi.', 'preferuji rozhovory v mensich skupinach.'], likertValues: [1, 2, 4, 3] },
+    { id: 7, type: 'big5', trait: 'agreeableness', question: 'Kdyz me kolega pozada o pomoc, obvykle...', options: ['pomohu, pokud se to tyka me prace.', 'snazim se pomoci hned i presto, ze toho mam sam/sama dost.', 'pomohu, pokud mi to pracovni vytizeni dovoli.', 'preferuji, aby si kazdy resal sve ukoly samostatne.'], likertValues: [2, 4, 3, 1] },
+    { id: 8, type: 'big5', trait: 'conscientiousness', question: 'Ve sve praci obvykle...', options: ['mam jasne nastaveny system a udrzuji si prehled ve vsech ukolech.', 'vetsinou si veci organizuji, ale obcas pracuji flexibilne podle situace.', 'organizaci resim spise prubezne podle aktualni potreby.', 'pracuji spise spontanne a system neni pro me zasadni.'], likertValues: [4, 3, 2, 1] },
+    { id: 9, type: 'big5', trait: 'neuroticism', question: 'Kritickou zpetnou vazbu na svou praci dokazu prijmout konstruktivne a vyuzit ji ke zlepseni.' },
+    { id: 10, type: 'big5', trait: 'conscientiousness', question: 'Pracovni ukoly si obvykle organizuji tak, abych je dokoncil/a s dostatecnym predstihem pred terminem.' },
+    { id: 11, type: 'big5', trait: 'neuroticism', question: 'Pri dulezitych rozhodnutich dokazu zachovat klid a nejprve si vse dobre promyslet.' },
+    { id: 12, type: 'big5', trait: 'neuroticism', question: 'Dokazu zachovat klid a soustredeni i pri praci pod tlakem.' },
+    { id: 13, type: 'big5', trait: 'openness', question: 'Ve sve praci preferuji ukoly, ktere mi umoznuji prichazet s novymi napady a hledat vlastni reseni.' },
+    { id: 14, type: 'big5', trait: 'agreeableness', question: 'V tymove praci se snazim podporovat spolupraci a dobrou atmosferu mezi kolegy.' },
+    { id: 15, type: 'big5', trait: 'extraversion', question: 'Komunikace s novymi lidmi nebo klienty mi obvykle nedela problem.' }
   ],
   psycho: [
-    { id: 1, type: 'integrity', question: 'Váš projekt byl úspěšný. Na poradě šéf pochválí hlavně kolegu, který přidal jen pár komentářů. Co uděláte?', options: [{ text: 'Nic, nechci působit ješitně.', score: 30 }, { text: 'Soukromě požádám šéfa o zpětnou vazbu a zmíním svůj přínos.', score: 100 }, { text: 'Veřejně opravím šéfa před týmem.', score: 40 }, { text: 'Napíšu šéfovi e-mail se seznamem toho, co jsem udělal já.', score: 70 }] },
-    { id: 2, type: 'integrity', question: 'Hodinu před odevzdáním klíčové analýzy zjistíte, že jste pracoval se špatnými daty. Oprava zabere 3 hodiny. Co uděláte?', options: [{ text: 'Odevzdám včas, chybu nahlásím dodatečně.', score: 50 }, { text: 'Ihned informuji nadřízeného, vysvětlím situaci a navrhnu realistický termín.', score: 100 }, { text: 'Opravím co stihnu a zbytek odhladím.', score: 20 }, { text: 'Požádám kolegu, ať to zkontroluje a podepíše za mě.', score: 0 }] },
-    { id: 3, type: 'integrity', question: 'Dostanete lukrativní pracovní nabídku od konkurence. Váš šéf vás právě povýšil a věří vám. Co uděláte?', options: [{ text: 'Odejdu bez řečí – business je business.', score: 40 }, { text: 'Řeknu šéfovi o nabídce a dám mu šanci reagovat.', score: 100 }, { text: 'Nastoupím ke konkurenci, ale dokončím rozjednané projekty.', score: 60 }, { text: 'Použiji nabídku jako páku na zvýšení platu, ale jít neplánuji.', score: 20 }] },
-    { id: 4, type: 'integrity', question: 'Kolega vás požádá, abyste mu kryl záda – tvrdil nadřízenému, že byl na schůzce s klientem, ale ve skutečnosti řešil osobní věc. Co uděláte?', options: [{ text: 'Potvrdím jeho verzi, je to přece kamarád.', score: 0 }, { text: 'Odmítnu lhát, ale řeknu mu, ať si věc vyřeší sám.', score: 100 }, { text: 'Nic neřeknu, ale budu si to pamatovat.', score: 30 }, { text: 'Rovnou to nahlásím nadřízenému.', score: 60 }] },
-    { id: 5, type: 'integrity', question: 'Při vyúčtování cestovních nákladů zjistíte, že systém vám omylem připsal o 2 000 Kč navíc. Firma si toho pravděpodobně nevšimne. Co uděláte?', options: [{ text: 'Nechám si to, systém přece chybuje.', score: 0 }, { text: 'Nahlásím přeplatek účetní a vrátím peníze.', score: 100 }, { text: 'Počkám, jestli se někdo ozve.', score: 10 }, { text: 'Použiji je na firemní oběd pro tým.', score: 20 }] },
-    { id: 6, type: 'integrity', question: 'Manažer vás požádá, abyste v prezentaci pro klienta „trochu přikrášlili" výsledky, které jsou ve skutečnosti průměrné. Co uděláte?', options: [{ text: 'Udělám to – šéf ví nejlíp.', score: 10 }, { text: 'Nabídnu, že výsledky zasadím do lepšího kontextu, ale bez zavádějících čísel.', score: 100 }, { text: 'Odmítnu a pohrozím stížností.', score: 50 }, { text: 'Udělám to, ale do souboru skryji původní data.', score: 30 }] },
-    { id: 7, type: 'integrity', question: 'Víte jako první o chystané reorganizaci, při které přijde váš oblíbený kolega o místo. Informace jsou důvěrné. Co uděláte?', options: [{ text: 'Řeknu mu to, ať se může připravit.', score: 30 }, { text: 'Zachovám mlčenlivost, ale poradím mu obecně, ať si aktualizuje životopis.', score: 100 }, { text: 'Zachovám mlčenlivost a neřeknu nic.', score: 70 }, { text: 'Anonymně mu pošlu tip e-mailem.', score: 20 }] },
-    { id: 8, type: 'integrity', question: 'Jste v časovém stresu a váš kolega dělá opakovaně chyby, které musíte opravovat. Jak situaci řešíte?', options: [{ text: 'Tiše opravuji a doufám, že se zlepší.', score: 20 }, { text: 'Promluvím s ním přímo a konstruktivně, nabídnu konkrétní pomoc.', score: 100 }, { text: 'Stěžuji si manažerovi, ať to vyřeší za mě.', score: 40 }, { text: 'Přestanu jeho chyby opravovat, ať pocítí důsledky.', score: 30 }] },
-    { id: 9, type: 'integrity', question: 'V pátek ve 4 odpoledne dostanete urgentní úkol, který normálně trvá 4 hodiny. Plánujete rodinnou oslavu. Co uděláte?', options: [{ text: 'Odejdu – soukromý život má přednost.', score: 20 }, { text: 'Zavolám domů, vysvětlím situaci a práci dokončím.', score: 100 }, { text: 'Udělám co stihnu za hodinu a zbytek nechám na pondělí.', score: 50 }, { text: 'Deleguji na kolegu bez jeho vědomí.', score: 0 }] },
-    { id: 10, type: 'integrity', question: 'Váš tým nedosáhl cíle. Na poradě šéf hledá viníka. Víte, že hlavní příčinou bylo špatné zadání od vedení. Co uděláte?', options: [{ text: 'Mlčím, nechci si dělat nepřátele.', score: 20 }, { text: 'Klidně a věcně popíšu, kde zadání nebylo jednoznačné a co by šlo příště zlepšit.', score: 100 }, { text: 'Veřejně obviním vedení.', score: 30 }, { text: 'Přijmu zodpovědnost za celý tým, i když to není fér.', score: 60 }] },
-    { id: 11, type: 'integrity', question: 'Během práce z domova zjistíte, že kolega si nechává schůzky v kalendáři, ale ve skutečnosti pracuje pro jiný projekt bokem. Co uděláte?', options: [{ text: 'Nic, není to moje věc.', score: 20 }, { text: 'Soukromě mu řeknu, že to vidím a dám mu šanci situaci napravit.', score: 100 }, { text: 'Anonymně to nahlásím HR.', score: 50 }, { text: 'Zeptám se ho, jestli by mě nezapojil taky.', score: 0 }] },
-    { id: 12, type: 'integrity', question: 'Jste na obchodním jednání a klient se zeptá na slabinu vašeho produktu, o které víte. Vaše firma ji veřejně nepřiznává. Co uděláte?', options: [{ text: 'Popřu, že slabina existuje.', score: 0 }, { text: 'Přiznám slabinu, ale zasadím ji do kontextu a nabídnu řešení.', score: 100 }, { text: 'Téma obratně přesměruji na silné stránky.', score: 60 }, { text: 'Řeknu, že to musím prověřit a odpovím e-mailem.', score: 70 }] },
-    { id: 13, type: 'integrity', question: 'Dostanete přístup k datům, ke kterým byste normálně přístup neměli – omylem vám přidali oprávnění. Data by vám pomohla v práci. Co uděláte?', options: [{ text: 'Využiji je, vždyť k tomu mám přístup.', score: 10 }, { text: 'Nahlásím IT, že mám přístup omylem, a data nepoužiji.', score: 100 }, { text: 'Stáhnu data a pak nahlásím chybu.', score: 0 }, { text: 'Nic, přístup prostě nezneužiji, ale nenahlásím.', score: 40 }] },
-    { id: 14, type: 'integrity', question: 'Váš přímý podřízený je skvělý pracovník, ale víte, že si hledá nové místo. Ovlivní to vaše hodnocení jeho výkonu?', options: [{ text: 'Ano, dám mu horší hodnocení jako motivaci zůstat.', score: 0 }, { text: 'Ne, ohodnotím ho objektivně podle výsledků.', score: 100 }, { text: 'Dám mu skvělé hodnocení, aby odešel spokojený.', score: 30 }, { text: 'Přeřadím ho na méně zajímavé projekty.', score: 10 }] },
-    { id: 15, type: 'integrity', question: 'V práci se nudíte a máte splněno. Zbývají dvě hodiny do konce pracovní doby. Co uděláte?', options: [{ text: 'Procházím sociální sítě – zasloužím si pauzu.', score: 30 }, { text: 'Zeptám se kolegů nebo manažera, kde mohu pomoci, nebo věnuji čas vzdělávání.', score: 100 }, { text: 'Odejdu dřív – práci mám stejně splněnou.', score: 20 }, { text: 'Předstírám práci, aby to tak vypadalo.', score: 0 }] },
-    { id: 16, type: 'integrity', question: 'Zákazník vám nabídne osobní dar (lahev vína) za to, že jste mu pomohli vyřešit problém. Co uděláte?', options: [{ text: 'Vezmu si to, bylo to přece moje úsilí.', score: 30 }, { text: 'Poděkuji, ale vysvětlím firemní politiku a dar odmítnu nebo nahlásím.', score: 100 }, { text: 'Vezmu to a dám to kolegům v kanceláři.', score: 40 }, { text: 'Odmítnu bez vysvětlení, ať klient chápe sám.', score: 60 }] },
-    { id: 17, type: 'integrity', question: 'Při kontrole výdajů zjistíte, že váš oblíbený kolega si opakovaně nechává proplácet soukromé výdaje jako firemní. Jde o menší částky. Co uděláte?', options: [{ text: 'Nic, jsou to malé částky.', score: 0 }, { text: 'Soukromě mu to řeknu a dám mu šanci to napravit.', score: 100 }, { text: 'Anonymně to nahlásím.', score: 60 }, { text: 'Počkám, jestli to někdo jiný odhalí.', score: 10 }] },
-    { id: 18, type: 'integrity', question: 'Váš manažer vás pochválí za výsledek, který byl z 80 % dílem vašeho kolegy. Ten na poradě nebyl. Co uděláte?', options: [{ text: 'Přijmu pochvalu – sám jsem to prezentoval.', score: 10 }, { text: 'Poděkuji a hned doplním, že klíčovou práci odvedl kolega.', score: 100 }, { text: 'Po poradě řeknu kolegovi, ať si sám zajde za šéfem.', score: 50 }, { text: 'Přijmu pochvalu, kolegovi pak poděkuji soukromě.', score: 30 }] },
-    { id: 19, type: 'integrity', question: 'Kolega vás požádá, abyste mu pomohli připravit prezentaci pro jeho vlastní pohovor u jiného zaměstnavatele v pracovní době. Co uděláte?', options: [{ text: 'Pomůžu mu – jsme přece kamarádi.', score: 20 }, { text: 'Odmítnu pomáhat v pracovní době, ale nabídnu pomoc po pracovní době.', score: 100 }, { text: 'Nahlásím to manažerovi.', score: 40 }, { text: 'Pomůžu, ale budu chtít protislužbu.', score: 0 }] },
-    { id: 20, type: 'integrity', question: 'Jste v týmu, který systematicky překračuje termíny. Víte proč – plánování je nerealistické. Šéf to nechce slyšet. Co uděláte?', options: [{ text: 'Přizpůsobím se – šéf má vždy pravdu.', score: 20 }, { text: 'Připravím datový přehled termínů a kapacit a požádám o strukturovaný rozhovor.', score: 100 }, { text: 'Stěžuji si kolegům v kuchyňce.', score: 0 }, { text: 'Anonymně upozorním vyšší vedení.', score: 40 }] }
+    { id: 1, type: 'integrity', question: 'Vsimnes si chyby v procesu, ktera zpomaluje cely tym. Neni to tvoje odpovednost a nikdo jiny to neresi. Co udelas?', options: [{ text: 'Ignoruju to, neni to moje role.', score: 0 }, { text: 'Zminim to nadrizenemu a dal to neresim.', score: 40 }, { text: 'Navrhnu reseni a zkusim ho probrat s tymem.', score: 80 }, { text: 'Zacnu to aktivne resit a dotahnu zmenu s ostatnimi.', score: 100 }] },
+    { id: 2, type: 'integrity', question: 'Kolega opakovane nedodava svou cast prace vcas, coz ohrozuje projekt. Co udelas?', options: [{ text: 'Udelam jeho praci za nej, aby byl klid.', score: 20 }, { text: 'Postezuji si ostatnim kolegum.', score: 10 }, { text: 'Otevrene to s nim proberem a hledam reseni.', score: 80 }, { text: 'Proberem to s nim a pokud se to nezlepsi, zapojim vedouciho.', score: 100 }] },
+    { id: 3, type: 'integrity', question: 'Dostanes kriticke feedback na svou praci, se kterym nesouhlasis. Co udelas?', options: [{ text: 'Ignoruju ho.', score: 0 }, { text: 'Vysvetlim, proc je spatny.', score: 20 }, { text: 'Zamyslim se nad nim a vyzadam si konkretni priklady.', score: 80 }, { text: 'Aktivne ho zapracuji a overim si zlepseni.', score: 100 }] },
+    { id: 4, type: 'integrity', question: 'Manazer te pozada, abys trochu upravil cisla, aby report vypadal lepe. Co udelas?', options: [{ text: 'Udelam to, je to jeho odpovednost.', score: 0 }, { text: 'Udelam to, ale nejsem s tim v pohode.', score: 10 }, { text: 'Upozornim na problem a odmitnu.', score: 80 }, { text: 'Odmitnu a navrhnu transparentni alternativu.', score: 100 }] },
+    { id: 5, type: 'integrity', question: 'Projekt, na kterem jsi pracoval tydny, se nahle rusi. Co udelas?', options: [{ text: 'Jsem frustrovany/a a ztracim motivaci.', score: 10 }, { text: 'Prijmu to, ale bez vetsiho zajmu.', score: 40 }, { text: 'Rychle se preorientuji na nove zadani.', score: 80 }, { text: 'Aktivne hledam, jak vyuzit uz odvedenou praci jinde.', score: 100 }] },
+    { id: 6, type: 'integrity', question: 'Vidis, ze rozhodnuti tymu smeruje spatnym smerem, ale jsi v mensine. Co udelas?', options: [{ text: 'Nic nereknemi.', score: 0 }, { text: 'Reknu to jednou a dal to neresim.', score: 40 }, { text: 'Argumentuji svuj pohled.', score: 70 }, { text: 'Aktivne diskutuji a hledam nejlepsi reseni s tymem.', score: 100 }] },
+    { id: 7, type: 'integrity', question: 'Zakaznik si stezuje na problem, ktery jsi nezpusobil. Co udelas?', options: [{ text: 'Odkazu ho jinam.', score: 10 }, { text: 'Vysvetlim, ze to neni moje chyba.', score: 20 }, { text: 'Pomohu mu problem vyresit.', score: 80 }, { text: 'Vyresim problem a hledam zpusob, jak mu predejit.', score: 100 }] },
+    { id: 8, type: 'integrity', question: 'Mas tri urgentni ukoly s podobnym deadlinem. Co udelas?', options: [{ text: 'Delam je postupne, jak prisly.', score: 20 }, { text: 'Vyberu si ten nejjednodussi.', score: 10 }, { text: 'Prioritizuji podle dopadu.', score: 80 }, { text: 'Prioritizuji, komunikuji ocekavani a pripadne prerozdeli praci.', score: 100 }] },
+    { id: 9, type: 'integrity', question: 'Udelas chybu, ktera zpusobi problem v projektu. Co udelas?', options: [{ text: 'Snazim se ji skryt.', score: 0 }, { text: 'Priznam ji, ale bez dalsi akce.', score: 30 }, { text: 'Priznam ji a opravim.', score: 80 }, { text: 'Priznam ji, opravim a nastavim prevenci do budoucna.', score: 100 }] },
+    { id: 10, type: 'integrity', question: 'Dostanes ukol, ktery vyzaduje dovednost, kterou nemas. Co udelas?', options: [{ text: 'Odmitnu ho.', score: 0 }, { text: 'Zkusim to bez pripravy.', score: 20 }, { text: 'Naucim se zaklady.', score: 70 }, { text: 'Aktivne se vzdelam a pozadam o pomoc, abych to zvladl/a dobre.', score: 100 }] },
+    { id: 11, type: 'integrity', question: 'Blizi se deadline a vit, ze pokud praci odevzdas vcas, bude obsahovat chyby. Co udelas?', options: [{ text: 'Odevzdami to tak, jak to je.', score: 10 }, { text: 'Odevzdami to a chyby zminim az potom.', score: 20 }, { text: 'Upozornim na riziko a navrhnu reseni.', score: 80 }, { text: 'Aktivne vyjednam prioritu mezi kvalitou a terminem a upravim plan.', score: 100 }] },
+    { id: 12, type: 'integrity', question: 'Dostanes ukol s velmi vagnim zadanim. Co udelas?', options: [{ text: 'Pockam, az nekdo upresni zadani.', score: 10 }, { text: 'Udelam to podle sebe bez overeni.', score: 20 }, { text: 'Doptam se na klicove veci.', score: 80 }, { text: 'Navrhnu konkretni smer a necham si ho rychle potvrdit.', score: 100 }] },
+    { id: 13, type: 'integrity', question: 'Vidis, ze jeden kolega dostava uznani za praci, na ktere ses vyznamne podilel. Co udelas?', options: [{ text: 'Neresim to.', score: 10 }, { text: 'Postezuji si kolegum.', score: 0 }, { text: 'Otevru to s danym kolegou.', score: 70 }, { text: 'Otevru to konstruktivne a nastavim jasnejsi pravidla do budoucna.', score: 100 }] },
+    { id: 14, type: 'integrity', question: 'Tvuj nadrizeny te prilis kontroluje a zasahuje do detailu. Co udelas?', options: [{ text: 'Frustuje me to, ale nic nereknemi.', score: 10 }, { text: 'Omezim komunikaci na minimum.', score: 0 }, { text: 'Otevrene to s nim proberem.', score: 70 }, { text: 'Navrhnu konkretni zpusob spoluprace a reporting, ktery snizi potrebu kontroly.', score: 100 }] },
+    { id: 15, type: 'integrity', question: 'Kolega udela chybu, ktera zatim neni viditelna, ale muze zpusobit problem pozdeji. Co udelas?', options: [{ text: 'Neresim to.', score: 0 }, { text: 'Opravim to bez jeho vedomi.', score: 30 }, { text: 'Upozornim ho na to.', score: 70 }, { text: 'Upozornim ho a pomohu nastavit prevenci.', score: 100 }] },
+    { id: 16, type: 'integrity', question: 'Mas vic prace, nez je realne zvladnutelne. Co udelas?', options: [{ text: 'Pracuji dele a doufam, ze to zvladnu.', score: 20 }, { text: 'Vyberu si, co chci delat.', score: 10 }, { text: 'Prioritizuji a neco odlozim.', score: 70 }, { text: 'Prioritizuji, komunikuji kapacitu a hledam reseni s tymem.', score: 100 }] },
+    { id: 17, type: 'integrity', question: 'Muses se rozhodnout rychle, ale nemas dostatek informaci. Co udelas?', options: [{ text: 'Pockam.', score: 10 }, { text: 'Rozhodnu se nahodne / intuitivne.', score: 20 }, { text: 'Udelam nejlepsi odhad.', score: 60 }, { text: 'Rychle si ziskam klicove minimum informaci a rozhodnu se.', score: 100 }] },
+    { id: 18, type: 'integrity', question: 'Dostanes rutinni, nezajimavy ukol. Co udelas?', options: [{ text: 'Odkladi ho.', score: 0 }, { text: 'Udelam minimum.', score: 30 }, { text: 'Udelam ho poradne.', score: 70 }, { text: 'Najdu zpusob, jak ho zlepsit nebo zefektivnit.', score: 100 }] },
+    { id: 19, type: 'integrity', question: 'Mas informace, ktere by pomohly ostatnim, ale nikdo si o ne nerekl. Co udelas?', options: [{ text: 'Necham si je pro sebe.', score: 0 }, { text: 'Reknu to jen pokud se nekdo zepta.', score: 30 }, { text: 'Sdilim je.', score: 70 }, { text: 'Sdilim je strukturovane tak, aby byly dlouhodobe pouzitelne.', score: 100 }] },
+    { id: 20, type: 'integrity', question: 'Firma zmeni smer, se kterym nesouhlasis. Co udelas?', options: [{ text: 'Ztratim motivaci.', score: 0 }, { text: 'Udelam jen nutne minimum.', score: 20 }, { text: 'Prizpusobim se.', score: 70 }, { text: 'Dam konstruktivni feedback a pak se plne prizpusobim.', score: 100 }] }
   ],
   specific: {
     sales: [
@@ -354,20 +329,27 @@ const TestRunner = ({ roleId, onComplete, isNoSpecificRole }) => {
     QUESTIONS.iq.forEach((q, idx) => { if (finalAnswers.iq[idx] === q.correct) iqCorrect++; });
     const iqScore = Math.round((iqCorrect / QUESTIONS.iq.length) * 100);
 
-    // Personality – správné mapování podle trait property každé otázky
+    // Personality – hybridni format: otazky 1-8 maji likertValues, 9-15 jsou standardni skala 1-5
     const traitTotals = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
     const traitCounts = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
-    // Reverzní otázky (kde nižší hodnota = vyšší trait)
-    const reversedIds = [3, 8, 12, 14, 18, 22, 23, 26]; // neuroticism+extraversion reversed
     QUESTIONS.personality.forEach((q, idx) => {
-      let val = finalAnswers.personality[idx] || 3;
-      if (reversedIds.includes(q.id)) val = 6 - val;
+      let val;
+      if (q.likertValues) {
+        // Otazky 1-8: vyber moznosti, hodnota dana likertValues polem
+        const answerIdx = finalAnswers.personality[idx];
+        val = (answerIdx !== undefined && q.likertValues[answerIdx] !== undefined)
+          ? q.likertValues[answerIdx]
+          : 3;
+      } else {
+        // Otazky 9-15: standardni skala 1-5
+        val = finalAnswers.personality[idx] || 3;
+      }
       traitTotals[q.trait] += val;
       traitCounts[q.trait]++;
     });
     const traits = {};
     Object.keys(traitTotals).forEach(t => {
-      traits[t] = Math.round((traitTotals[t] / (traitCounts[t] * 5)) * 100);
+      traits[t] = Math.round((traitTotals[t] / (traitCounts[t] * 4)) * 100);
     });
 
     // Integrita
@@ -390,6 +372,7 @@ const TestRunner = ({ roleId, onComplete, isNoSpecificRole }) => {
   const currentQ = questions[questionIndex];
   const specificLen = isNoSpecific ? 0 : (QUESTIONS.specific[roleId]?.length || 0);
   const totalQs = QUESTIONS.iq.length + QUESTIONS.personality.length + QUESTIONS.psycho.length + specificLen;
+  // personality length is now 15
   let currentGlobalIndex = questionIndex;
   if (currentSection > 0) currentGlobalIndex += QUESTIONS.iq.length;
   if (currentSection > 1) currentGlobalIndex += QUESTIONS.personality.length;
@@ -422,12 +405,24 @@ const TestRunner = ({ roleId, onComplete, isNoSpecificRole }) => {
         )}
         {currentSection === 1 && (
           <div className="space-y-4">
-            <div className="flex justify-between text-sm font-bold text-gray-400 px-1 uppercase"><span>Nesouhlasím</span><span>Souhlasím</span></div>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((val) => (
-                <button key={val} onClick={() => handleAnswer(val)} className={`flex-1 h-14 rounded border transition-all font-bold ${answers.personality[questionIndex] === val ? S_MAGENTA + ' text-white border-transparent' : 'bg-white border-gray-300 hover:border-[#E30074]'}`}>{val}</button>
-              ))}
-            </div>
+            {currentQ.likertValues ? (
+              // Otazky 1-8: vyber ze 4 moznosti
+              <div className="space-y-3">
+                {currentQ.options.map((opt, idx) => (
+                  <button key={idx} onClick={() => handleAnswer(idx)} className="w-full p-4 border border-gray-300 rounded hover:border-[#E30074] hover:bg-pink-50 transition-all text-left text-sm text-gray-700">{opt}</button>
+                ))}
+              </div>
+            ) : (
+              // Otazky 9-15: standardni skala 1-5
+              <div>
+                <div className="flex justify-between text-sm font-bold text-gray-400 px-1 uppercase mb-3"><span>Vůbec nesouhlasím</span><span>Zcela souhlasím</span></div>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((val) => (
+                    <button key={val} onClick={() => handleAnswer(val)} className={`flex-1 h-14 rounded border transition-all font-bold ${answers.personality[questionIndex] === val ? S_MAGENTA + ' text-white border-transparent' : 'bg-white border-gray-300 hover:border-[#E30074]'}`}>{val}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {(currentSection === 2 || currentSection === 3) && currentQ && (
