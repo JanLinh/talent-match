@@ -989,19 +989,33 @@ const AdminView = ({
 // --- CANDIDATE VIEW ---
 const CandidateView = ({ currentCandidate, setAppMode, onFinish, allRoles }) => {
   const [testStarted, setTestStarted] = useState(false);
+  const role = allRoles.find(r => r.id === currentCandidate.roleId);
+  const hasSpecific = !role?.noSpecific;
+
+  // Sdílené záhlaví – stejné jako v administraci
+  const CandidateHeader = () => (
+    <header className="bg-gray-700 border-b border-gray-600 sticky top-0 z-40">
+      <div className="max-w-4xl mx-auto px-6 py-3 flex justify-between items-center">
+        <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-8" />
+        <div className="flex items-center gap-2 text-sm text-gray-300">
+          <User size={15} />
+          <span className="font-semibold text-white">{currentCandidate.name}</span>
+          <span className="text-gray-500 mx-1">·</span>
+          <span className="text-gray-400">{role?.label || currentCandidate.roleId}</span>
+        </div>
+      </div>
+    </header>
+  );
 
   if (currentCandidate.status === 'completed') {
     return (
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-        <header className="bg-white border-b border-gray-200 py-4 px-6 flex justify-center items-center relative">
-          <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-6" />
-          <div className="absolute right-6 flex items-center gap-2 text-sm text-gray-500"><User size={16} /><span className="font-semibold text-gray-900">{currentCandidate.name}</span></div>
-        </header>
+        <CandidateHeader />
         <div className="max-w-4xl mx-auto p-6">
           <div className="bg-white rounded-xl shadow-lg p-12 text-center mt-12">
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"><CheckCircle size={40} /></div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Hotovo! Děkujeme.</h1>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">Vaše odpovědi byly úspěšně odeslány našemu HR týmu. Budeme vás kontaktovat.</p>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">Vaše odpovědi byly úspěšně odeslány. Budeme vás brzy kontaktovat.</p>
           </div>
         </div>
       </div>
@@ -1011,32 +1025,53 @@ const CandidateView = ({ currentCandidate, setAppMode, onFinish, allRoles }) => 
   if (!testStarted) {
     return (
       <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-        <header className="bg-white border-b border-gray-200 py-4 px-6 flex justify-center items-center relative">
-          <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-6" />
-          <div className="absolute right-6 flex items-center gap-2 text-sm text-gray-500"><User size={16} /><span className="font-semibold text-gray-900">{currentCandidate.name}</span></div>
-        </header>
+        <CandidateHeader />
         <div className="max-w-2xl mx-auto p-6 mt-8">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-            <div className="bg-gray-900 p-8 text-white text-center">
-              <h1 className="text-3xl font-bold mb-2">Vítejte u výběrového řízení</h1>
-              <p className="text-gray-400">Pozice: <span className="text-[#E30074] font-bold">{allRoles.find(r => r.id === currentCandidate.roleId)?.label || currentCandidate.roleId}</span></p>
+            <div className="bg-gray-700 p-8 text-white text-center">
+              <h1 className="text-3xl font-bold mb-2">Vítejte v assessmentu</h1>
+              <p className="text-gray-300 mt-1">Pozice: <span className="text-[#E30074] font-bold">{role?.label || currentCandidate.roleId}</span></p>
             </div>
             <div className="p-8">
-              <h2 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2"><Info className="text-[#E30074]" size={20} /> Co vás čeká?</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div className="bg-gray-50 p-4 rounded border border-gray-100 flex items-start gap-3"><Brain className="text-gray-400 mt-1" size={20} /><div><div className="font-bold text-gray-800 text-sm">Logické myšlení</div><div className="text-xs text-gray-500">IQ a abstraktní uvažování</div></div></div>
-                <div className="bg-gray-50 p-4 rounded border border-gray-100 flex items-start gap-3"><Users className="text-gray-400 mt-1" size={20} /><div><div className="font-bold text-gray-800 text-sm">Osobnostní profil</div><div className="text-xs text-gray-500">Big Five metodika</div></div></div>
-                <div className="bg-gray-50 p-4 rounded border border-gray-100 flex items-start gap-3"><ShieldAlert className="text-gray-400 mt-1" size={20} /><div><div className="font-bold text-gray-800 text-sm">Integrita</div><div className="text-xs text-gray-500">Řešení krizových situací</div></div></div>
-                <div className="bg-gray-50 p-4 rounded border border-gray-100 flex items-start gap-3"><Briefcase className="text-gray-400 mt-1" size={20} /><div><div className="font-bold text-gray-800 text-sm">Odbornost</div><div className="text-xs text-gray-500">Specifické znalosti pozice</div></div></div>
+              <h2 className="font-bold text-lg text-gray-900 mb-4 flex items-center gap-2"><Info className="text-[#E30074]" size={20} />Co vás čeká?</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-start gap-3">
+                  <Brain className="text-[#E30074] mt-0.5 flex-shrink-0" size={20} />
+                  <div>
+                    <div className="font-bold text-gray-800 text-sm">1. Logické myšlení</div>
+                    <div className="text-xs text-gray-500 mt-0.5">10 otázek · analytické a kritické myšlení</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-start gap-3">
+                  <Users className="text-[#E30074] mt-0.5 flex-shrink-0" size={20} />
+                  <div>
+                    <div className="font-bold text-gray-800 text-sm">2. Osobnostní profil</div>
+                    <div className="text-xs text-gray-500 mt-0.5">15 otázek · Big Five metodika</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-start gap-3">
+                  <ShieldAlert className="text-[#E30074] mt-0.5 flex-shrink-0" size={20} />
+                  <div>
+                    <div className="font-bold text-gray-800 text-sm">3. Hodnotový fit</div>
+                    <div className="text-xs text-gray-500 mt-0.5">25 otázek · situační scénáře a hodnoty</div>
+                  </div>
+                </div>
+                {hasSpecific && (
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-start gap-3">
+                    <Briefcase className="text-[#E30074] mt-0.5 flex-shrink-0" size={20} />
+                    <div>
+                      <div className="font-bold text-gray-800 text-sm">4. Odborné znalosti</div>
+                      <div className="text-xs text-gray-500 mt-0.5">20 otázek · znalosti specifické pro pozici</div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <ul className="space-y-3 mb-8 text-sm text-gray-600">
-                <li className="flex items-center gap-3"><Clock size={16} className="text-gray-400" /><span>Vyhraďte si cca <strong>45 minut</strong> bez přerušení.</span></li>
-                <li className="flex items-center gap-3"><Wifi size={16} className="text-gray-400" /><span>Zajistěte si <strong>stabilní připojení</strong> k internetu.</span></li>
-                <li className="flex items-center gap-3"><Monitor size={16} className="text-gray-400" /><span>Test nelze v průběhu <strong>přerušit ani uložit</strong>.</span></li>
+              <ul className="space-y-3 mb-8 text-sm text-gray-600 bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <li className="flex items-center gap-3"><Clock size={15} className="text-[#E30074] flex-shrink-0" /><span>Vyhraďte si <strong>{hasSpecific ? '60–75' : '45–55'} minut</strong> v klidu bez přerušení.</span></li>
+                <li className="flex items-center gap-3"><Wifi size={15} className="text-[#E30074] flex-shrink-0" /><span>Zajistěte si <strong>stabilní připojení</strong> k internetu.</span></li>
+                <li className="flex items-center gap-3"><Monitor size={15} className="text-[#E30074] flex-shrink-0" /><span>Test nelze v průběhu <strong>přerušit ani uložit</strong> – dokončete ho najednou.</span></li>
               </ul>
-              <div className="border-t border-gray-100 pt-6">
-                <ButtonPrimary onClick={() => setTestStarted(true)} icon={Play}>ROZUMÍM, SPUSTIT TEST</ButtonPrimary>
-              </div>
+              <ButtonPrimary onClick={() => setTestStarted(true)} icon={Play}>ROZUMÍM, SPUSTIT TEST</ButtonPrimary>
             </div>
           </div>
         </div>
@@ -1046,16 +1081,9 @@ const CandidateView = ({ currentCandidate, setAppMode, onFinish, allRoles }) => 
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
-      <header className="bg-white border-b border-gray-200 py-4 px-6 flex justify-center items-center relative">
-        <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-6" />
-        <div className="absolute right-6 flex items-center gap-2 text-sm text-gray-500"><User size={16} /><span className="font-semibold text-gray-900">{currentCandidate.name}</span></div>
-      </header>
+      <CandidateHeader />
       <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vstupní Assessment</h1>
-          <p className="text-gray-500">Role: <span className="font-bold text-black">{allRoles.find(r => r.id === currentCandidate.roleId)?.label || currentCandidate.roleId}</span></p>
-        </div>
-        <TestRunner roleId={currentCandidate.roleId} onComplete={onFinish} isNoSpecificRole={allRoles.find(r => r.id === currentCandidate.roleId)?.noSpecific || false} />
+        <TestRunner roleId={currentCandidate.roleId} onComplete={onFinish} isNoSpecificRole={role?.noSpecific || false} />
       </div>
     </div>
   );
