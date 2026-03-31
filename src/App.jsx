@@ -324,38 +324,51 @@ const TestRunner = ({ roleId, onComplete, isNoSpecificRole }) => {
   const calculateAndComplete = (finalAnswers) => {
     const timeTaken = TEST_DURATION_SECONDS - timeLeft;
 
-    // IQ skóre
+    // IQ skóre – otázky 1-5 jsou situační (správná volba = best answer), 6-10 jsou logické
+    // Všechny mají definovaný 'correct' index, takže vyhodnocujeme stejně
     let iqCorrect = 0;
     QUESTIONS.iq.forEach((q, idx) => { if (finalAnswers.iq[idx] === q.correct) iqCorrect++; });
     const iqScore = Math.round((iqCorrect / QUESTIONS.iq.length) * 100);
 
-    // Personality – hybridni format: otazky 1-8 maji likertValues, 9-15 jsou standardni skala 1-5
+    // Osobnost – hybridní formát:
+    // Q1-8: výběr ze 4 možností s likertValues [1-4], max = 4
+    // Q9-15: škála 1-5, max = 5
+    // Normalizujeme každou otázku na 0-100 zvlášť před agregací
     const traitTotals = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
     const traitCounts = { openness: 0, conscientiousness: 0, extraversion: 0, agreeableness: 0, neuroticism: 0 };
     QUESTIONS.personality.forEach((q, idx) => {
-      let val;
+      let normalizedVal; // 0-100
       if (q.likertValues) {
-        // Otazky 1-8: vyber moznosti, hodnota dana likertValues polem
+        // Q1-8: hodnota z likertValues, max = 4, min = 1 -> normalizuj na 0-100
         const answerIdx = finalAnswers.personality[idx];
-        val = (answerIdx !== undefined && q.likertValues[answerIdx] !== undefined)
-          ? q.likertValues[answerIdx]
-          : 3;
+        const raw = (answerIdx !== undefined && q.likertValues[answerIdx] !== undefined)
+          ? q.likertValues[answerIdx] : 2.5;
+        normalizedVal = Math.round(((raw - 1) / 3) * 100); // (val-1)/(max-min) * 100
       } else {
-        // Otazky 9-15: standardni skala 1-5
-        val = finalAnswers.personality[idx] || 3;
+        // Q9-15: škála 1-5, normalizuj na 0-100
+        const raw = finalAnswers.personality[idx] || 3;
+        normalizedVal = Math.round(((raw - 1) / 4) * 100); // (val-1)/(max-min) * 100
       }
-      traitTotals[q.trait] += val;
+      traitTotals[q.trait] += normalizedVal;
       traitCounts[q.trait]++;
     });
     const traits = {};
     Object.keys(traitTotals).forEach(t => {
-      traits[t] = Math.round((traitTotals[t] / (traitCounts[t] * 4)) * 100);
+      // Průměr normalizovaných hodnot (0-100) = výsledné skóre 0-100
+      traits[t] = traitCounts[t] > 0 ? Math.round(traitTotals[t] / traitCounts[t]) : 50;
     });
 
-    // Integrita
-    let integritySum = 0;
-    QUESTIONS.psycho.forEach((q, idx) => { integritySum += (finalAnswers.psycho[idx] || 0); });
-    const integrityScore = Math.round(integritySum / QUESTIONS.psycho.length);
+    // Hodnotový fit / Integrita – každá otázka má skóre 0-100
+    // Správný výpočet: průměr skóre všech otázek (každá je již 0-100)
+    let integritySum = 0; let integrityCount = 0;
+    QUESTIONS.psycho.forEach((q, idx) => {
+      const score = finalAnswers.psycho[idx];
+      if (score !== undefined && score !== null) {
+        integritySum += score;
+        integrityCount++;
+      }
+    });
+    const integrityScore = integrityCount > 0 ? Math.round(integritySum / integrityCount) : 0;
 
     // Odbornost
     let specificCorrect = 0;
@@ -463,7 +476,11 @@ const AnswerDetailView = ({ candidate }) => {
               const userAns = sectionAnswers[idx];
               let statusIcon = null;
               if (key === 'personality') {
-                statusIcon = <span className="font-bold text-blue-600">Hodnota: {userAns ?? '-'}</span>;
+                const traitVal = q.likertValues
+                  ? (userAns !== undefined && q.likertValues[userAns] !== undefined ? q.likertValues[userAns] : '-')
+                  : (userAns ?? '-');
+                const maxVal = q.likertValues ? 4 : 5;
+                statusIcon = <span className="font-bold text-blue-600">Hodnota: {traitVal} / {maxVal}</span>;
               } else if (key === 'psycho') {
                 const maxScore = Math.max(...q.options.map(o => o.score));
                 const color = userAns === maxScore ? 'text-green-600' : userAns > 0 ? 'text-yellow-600' : 'text-red-600';
@@ -483,7 +500,9 @@ const AnswerDetailView = ({ candidate }) => {
                       {key === 'psycho'
                         ? `Vybráno: "${q.options.find(o => o.score === userAns)?.text ?? 'bez odpovědi'}"`
                         : key === 'personality'
-                          ? '(Škála 1-5)'
+                          ? q.likertValues
+                            ? `Vybráno: "${q.options?.[userAns] ?? 'bez odpovědi'}"`
+                            : `Hodnocení: ${userAns ?? '-'} / 5`
                           : `Odpověď: ${userAns !== undefined ? q.options[userAns] : 'bez odpovědi'}`}
                     </div>
                     <div className="flex items-center gap-1 whitespace-nowrap">{statusIcon}</div>
@@ -704,14 +723,14 @@ const AdminView = ({
   const activeBenchmark = getActiveBenchmark();
 
   const METRIC_LABELS = [
-    { key: 'iq', label: 'IQ' },
+    { key: 'iq', label: 'IQ / Analytika' },
+    { key: 'integrity', label: 'Hodnotový fit' },
     { key: 'conscientiousness', label: 'Svědomitost' },
-    { key: 'integrity', label: 'Integrita' },
     { key: 'specific', label: 'Odbornost' },
     { key: 'openness', label: 'Otevřenost' },
     { key: 'extraversion', label: 'Extraverze' },
     { key: 'agreeableness', label: 'Přívětivost' },
-    { key: 'neuroticism', label: 'Neuroticismus' }
+    { key: 'neuroticism', label: 'Emoční stabilita', inverted: true }
   ];
 
   return (
@@ -763,7 +782,8 @@ const AdminView = ({
                     </div>
                     <div className="space-y-5">
                       {METRIC_LABELS.filter(m => !(m.key === 'specific' && allRoles.find(r => r.id === viewCandidate.roleId)?.noSpecific)).map(m => {
-                        const candVal = viewCandidate.results?.[m.key] ?? 0;
+                        const rawVal = viewCandidate.results?.[m.key] ?? 0;
+                        const candVal = m.inverted ? (100 - rawVal) : rawVal;
                         const benchVal = activeBenchmark?.metrics?.[m.key] ?? 0;
                         const diff = candVal - benchVal;
                         return (
@@ -1139,9 +1159,29 @@ export default function TalentMatchApp() {
   };
 
   const handleCandidateFinish = async (results, timeTaken, rawAnswers) => {
-    const scoreFields = [results.iq || 0, results.integrity || 0, results.conscientiousness || 0];
-    if (results.specific !== null && results.specific !== undefined) scoreFields.push(results.specific);
-    const avgScore = Math.round(scoreFields.reduce((a, b) => a + b, 0) / scoreFields.length);
+    // Celkové skóre: IQ (25%), Integrita/hodnoty (35%), Svědomitost (15%), Přívětivost (10%), Odbornost (15%)
+    // Neuroticismus se invertuje (nižší = lepší emoční stabilita)
+    const emotionalStability = 100 - (results.neuroticism || 50);
+    const hasSpecific = results.specific !== null && results.specific !== undefined;
+    let avgScore;
+    if (hasSpecific) {
+      avgScore = Math.round(
+        (results.iq || 0) * 0.20 +
+        (results.integrity || 0) * 0.30 +
+        (results.conscientiousness || 0) * 0.15 +
+        emotionalStability * 0.10 +
+        (results.agreeableness || 0) * 0.05 +
+        (results.specific || 0) * 0.20
+      );
+    } else {
+      avgScore = Math.round(
+        (results.iq || 0) * 0.25 +
+        (results.integrity || 0) * 0.35 +
+        (results.conscientiousness || 0) * 0.20 +
+        emotionalStability * 0.12 +
+        (results.agreeableness || 0) * 0.08
+      );
+    }
     try {
       const candidateRef = doc(db, "candidates", currentCandidate.id);
       await updateDoc(candidateRef, {
