@@ -3,7 +3,7 @@ import { User, CheckCircle, Brain, Activity, ChevronRight, BarChart2, Users, Pla
 
 // --- FIREBASE SETUP ---
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, getDocs, deleteDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCji-kM2w14LSBB1ndfoo8yN_8gsvh7OhM",
@@ -53,7 +53,12 @@ async function callGemini(prompt, systemInstruction = "", isJson = false) {
 const INITIAL_BENCHMARKS = [];
 
 const BASE_ROLES = [
-  { id: 'general', label: 'Obecná pozice', icon: Globe, noSpecific: true }
+  { id: 'general', label: 'Obecná pozice', icon: Globe, noSpecific: true },
+  { id: 'sales', label: 'Obchodník (B2B)', icon: Briefcase },
+  { id: 'retail', label: 'Prodejce na prodejně', icon: Tag },
+  { id: 'marketing', label: 'Marketing Specialist', icon: Megaphone },
+  { id: 'procurement', label: 'Nákupčí', icon: ShoppingBag },
+  { id: 'accountant', label: 'Účetní', icon: Calculator }
 ];
 
 const QUESTIONS = {
@@ -560,9 +565,29 @@ const LoginScreen = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const handleSubmit = () => {
-    if (username === 'admin' && password === 'smarty2025') { onLogin('admin'); }
-    else { setError('Neplatné přihlašovací údaje.'); }
+  const [loading, setLoading] = useState(false);
+  const handleSubmit = async () => {
+    if (!username || !password) { setError('Vyplňte uživatelské jméno a heslo.'); return; }
+    setLoading(true); setError('');
+    // Hardcoded superadmin
+    if (username === 'admin' && password === 'smarty2025') {
+      onLogin({ username: 'admin', role: 'superadmin', displayName: 'Administrátor' });
+      setLoading(false); return;
+    }
+    // Check Firestore HR users
+    try {
+      const q = query(collection(db, "hrUsers"), where("username", "==", username.trim()));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const userDoc = snap.docs[0].data();
+        if (userDoc.password === password && userDoc.active !== false) {
+          onLogin({ username: userDoc.username, role: 'hr', displayName: userDoc.displayName || userDoc.username, id: snap.docs[0].id });
+          setLoading(false); return;
+        }
+      }
+      setError('Neplatné přihlašovací údaje.');
+    } catch(e) { setError('Chyba připojení k databázi.'); }
+    setLoading(false);
   };
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
@@ -717,7 +742,12 @@ const AdminView = ({
   showInviteModal, setShowInviteModal, inviteForm, setInviteForm, generatedLink, setGeneratedLink,
   handleGenerateInvite, isGeneratingLink, newRoleDescription, setNewRoleDescription,
   generateBenchmark, isGeneratingBenchmark, setAppMode, handleSimulateLinkClick, onDeleteCandidate,
-  allRoles, customRoles, onAddCustomRole, onDeleteCustomRole, onExportPdf
+  allRoles, customRoles, onAddCustomRole, onDeleteCustomRole, onExportPdf,
+  currentUser, isSuperAdmin,
+  recruitingSections, activeSectionId, setActiveSectionId, showSectionModal, setShowSectionModal,
+  newSectionName, setNewSectionName, onAddSection, onDeleteSection,
+  hrUsers, showUsersModal, setShowUsersModal, userForm, setUserForm,
+  onAddHrUser, onToggleHrUser, onDeleteHrUser
 }) => {
   const viewCandidate = candidates.find(c => c.id === activeCandidateId);
 
@@ -750,9 +780,21 @@ const AdminView = ({
             <img src="https://www.smarty.cz/img/logo-smartycz-inversed.svg" alt="Smarty.cz" className="h-8" />
             <span className="text-xs text-gray-300 bg-gray-600 px-2 py-1 rounded hidden sm:inline-block">ADMINISTRACE</span>
           </div>
-          <button onClick={() => setAppMode('landing')} className="text-sm font-medium text-gray-300 hover:text-white flex items-center gap-2">
-            <LogOut size={16} /> Odhlásit
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 text-sm text-gray-300">
+              <User size={14} />
+              <span className="font-medium text-white">{currentUser?.displayName}</span>
+              <span className="text-xs text-gray-500 bg-gray-600 px-2 py-0.5 rounded">{isSuperAdmin ? 'superadmin' : 'HR'}</span>
+            </div>
+            {isSuperAdmin && (
+              <button onClick={() => setShowUsersModal(true)} className="text-xs text-gray-300 hover:text-white flex items-center gap-1 bg-gray-600 hover:bg-gray-500 px-3 py-1.5 rounded transition-colors">
+                <Users size={13} /> Správa uživatelů
+              </button>
+            )}
+            <button onClick={() => setAppMode('landing')} className="text-sm font-medium text-gray-300 hover:text-white flex items-center gap-2">
+              <LogOut size={16} /> Odhlásit
+            </button>
+          </div>
         </div>
       </header>
 
@@ -857,6 +899,32 @@ const AdminView = ({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-3 space-y-6">
+              {/* SEKCE NÁBORU */}
+              <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2"><Briefcase size={15} className="text-[#E30074]" /> Sekce náboru</h3>
+                <div className="space-y-1 mb-3 max-h-[220px] overflow-y-auto">
+                  <button onClick={() => setActiveSectionId('all')} className={`w-full text-left px-3 py-2 rounded text-sm transition-colors flex items-center justify-between ${activeSectionId === 'all' ? 'bg-[#E30074] text-white font-bold' : 'hover:bg-gray-50 text-gray-700'}`}>
+                    <span>Všichni kandidáti</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${activeSectionId === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>{candidates.length}</span>
+                  </button>
+                  {recruitingSections.map(sec => {
+                    const count = candidates.filter(c => c.sectionId === sec.id).length;
+                    return (
+                      <div key={sec.id} className={`flex items-center rounded transition-colors ${activeSectionId === sec.id ? 'bg-pink-50' : 'hover:bg-gray-50'}`}>
+                        <button onClick={() => setActiveSectionId(sec.id)} className={`flex-1 text-left px-3 py-2 text-sm flex items-center justify-between ${activeSectionId === sec.id ? 'text-[#E30074] font-bold' : 'text-gray-700'}`}>
+                          <span className="truncate">{sec.name}</span>
+                          <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded ml-1">{count}</span>
+                        </button>
+                        {isSuperAdmin && <button onClick={() => onDeleteSection(sec.id)} className="px-2 text-gray-300 hover:text-red-500"><X size={13}/></button>}
+                      </div>
+                    );
+                  })}
+                </div>
+                <button onClick={() => setShowSectionModal(true)} className="w-full py-2 text-xs font-bold text-[#E30074] border border-[#E30074] rounded hover:bg-[#E30074] hover:text-white transition-colors flex items-center justify-center gap-1">
+                  <Plus size={13} /> NOVÁ SEKCE
+                </button>
+              </div>
+
               <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                 <h3 className="font-bold text-gray-900 mb-3">Benchmarky</h3>
                 {benchmarks.length === 0 ? (
@@ -908,36 +976,47 @@ const AdminView = ({
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-bold">
-                    <tr><th className="p-4">Jméno</th><th className="p-4">Role</th><th className="p-4">Datum / Čas</th><th className="p-4">Status</th><th className="p-4 text-right">Doba</th><th className="p-4 text-right">Skóre</th><th className="p-4"></th></tr>
+                    <tr><th className="p-4">Jméno</th><th className="p-4">Role</th><th className="p-4">Vygeneroval</th><th className="p-4">Datum / Čas</th><th className="p-4">Status</th><th className="p-4 text-right">Doba</th><th className="p-4 text-right">Skóre</th><th className="p-4"></th></tr>
                   </thead>
                   <tbody className="text-sm">
-                    {candidates.length === 0 ? (
+                    {(() => {
+                      const filtered = activeSectionId === 'all' ? candidates : candidates.filter(c => c.sectionId === activeSectionId);
+                      const activeSection = recruitingSections.find(s => s.id === activeSectionId);
+                      return (<>
+                        {activeSectionId !== 'all' && (
+                          <tr><td colSpan="8" className="px-4 pt-4 pb-2"><div className="flex items-center gap-2 text-sm font-bold text-gray-700"><Briefcase size={14} className="text-[#E30074]"/>{activeSection?.name}<span className="text-gray-400 font-normal">({filtered.length} kandidátů)</span></div></td></tr>
+                        )}
+                        {filtered.length === 0 ? (
                       <tr><td colSpan="7" className="p-8 text-center text-gray-500">Zatím žádní kandidáti v databázi.</td></tr>
-                    ) : candidates.map(c => {
-                      const roleObj = allRoles.find(r => r.id === c.roleId); const RoleIcon = roleObj?.icon || Globe;
-                      return (
-                        <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="p-4 font-bold text-gray-900">{c.name}</td>
-                          <td className="p-4 text-gray-600"><div className="flex items-center gap-2">{RoleIcon && <RoleIcon size={16} />}{allRoles.find(r => r.id === c.roleId)?.label || c.roleId}</div></td>
-                          <td className="p-4 text-gray-500">
-                            <div className="text-xs">{c.date}</div>
-                            {c.linkGeneratedAt && <div className="text-[10px] text-gray-400">{new Date(c.linkGeneratedAt).toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>}
-                          </td>
-                          <td className="p-4">{c.status === 'completed'
-                            ? <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><CheckCircle size={12} /> Hotovo</span>
-                            : <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><Activity size={12} /> Čeká se</span>}
-                          </td>
-                          <td className="p-4 text-right font-mono text-gray-500">{formatTime(c.timeTaken)}</td>
-                          <td className="p-4 text-right font-bold text-lg">{c.score ? <span className={c.score > 80 ? 'text-green-600' : 'text-gray-900'}>{c.score}</span> : <span className="text-gray-300">-</span>}</td>
-                          <td className="p-4 text-right">
-                            <div className="flex items-center justify-end gap-3">
-                              {c.status === 'completed' && <button onClick={() => setActiveCandidateId(c.id)} className="text-[#E30074] font-bold hover:underline text-xs">Zobrazit</button>}
-                              <button onClick={() => onDeleteCandidate(c.id, c.name)} className="text-red-400 hover:text-red-600 transition-colors" title="Smazat záznam"><Trash2 size={15} /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                        ) : filtered.map(c => {
+                          const roleObj = allRoles.find(r => r.id === c.roleId); const RoleIcon = roleObj?.icon || Globe;
+                          const sec = recruitingSections.find(s => s.id === c.sectionId);
+                          return (
+                            <tr key={c.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                              <td className="p-4"><div className="font-bold text-gray-900">{c.name}</div>{sec && <div className="text-[10px] text-[#E30074] font-medium mt-0.5">{sec.name}</div>}</td>
+                              <td className="p-4 text-gray-600"><div className="flex items-center gap-2">{RoleIcon && <RoleIcon size={16} />}{allRoles.find(r => r.id === c.roleId)?.label || c.roleId}</div></td>
+                              <td className="p-4 text-gray-500 text-xs">{c.createdBy || '–'}</td>
+                              <td className="p-4 text-gray-500">
+                                <div className="text-xs">{c.date}</div>
+                                {c.linkGeneratedAt && <div className="text-[10px] text-gray-400">{new Date(c.linkGeneratedAt).toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>}
+                              </td>
+                              <td className="p-4">{c.status === 'completed'
+                                ? <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><CheckCircle size={12} /> Hotovo</span>
+                                : <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold flex items-center w-fit gap-1"><Activity size={12} /> Čeká se</span>}
+                              </td>
+                              <td className="p-4 text-right font-mono text-gray-500">{formatTime(c.timeTaken)}</td>
+                              <td className="p-4 text-right font-bold text-lg">{c.score ? <span className={c.score > 80 ? 'text-green-600' : 'text-gray-900'}>{c.score}</span> : <span className="text-gray-300">-</span>}</td>
+                              <td className="p-4 text-right">
+                                <div className="flex items-center justify-end gap-3">
+                                  {c.status === 'completed' && <button onClick={() => setActiveCandidateId(c.id)} className="text-[#E30074] font-bold hover:underline text-xs">Zobrazit</button>}
+                                  <button onClick={() => onDeleteCandidate(c.id, c.name)} className="text-red-400 hover:text-red-600 transition-colors" title="Smazat záznam"><Trash2 size={15} /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </>);
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -955,6 +1034,12 @@ const AdminView = ({
               <div className="grid grid-cols-2 gap-2">
                 {allRoles.map(role => { const RIcon = role.icon || Globe; return (<button key={role.id} onClick={() => setInviteForm({ ...inviteForm, role: role.id })} className={`p-3 text-sm rounded border flex flex-col items-center gap-2 transition-all ${inviteForm.role === role.id ? 'border-[#E30074] bg-pink-50 text-[#E30074] font-bold' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}><RIcon size={20} />{role.label}</button>); })}
               </div>
+            </div>
+            <div><label className="block text-sm font-bold text-gray-700 mb-1">Sekce náboru <span className="text-gray-400 font-normal">(volitelné)</span></label>
+              <select className="w-full border border-gray-300 rounded p-2.5 text-sm focus:border-[#E30074] outline-none" value={inviteForm.sectionId || ''} onChange={e => setInviteForm({ ...inviteForm, sectionId: e.target.value || null })}>
+                <option value="">– Bez sekce –</option>
+                {recruitingSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
             </div>
             <ButtonPrimary onClick={handleGenerateInvite} disabled={!inviteForm.name || !inviteForm.role || isGeneratingLink}>
               {isGeneratingLink ? 'Generuji...' : 'Generovat Odkaz'}
@@ -982,6 +1067,54 @@ const AdminView = ({
           </ButtonPrimary>
         </div>
       </Modal>
+
+      {/* SECTION MODAL */}
+      <Modal isOpen={showSectionModal} onClose={() => setShowSectionModal(false)} title="Nová sekce náboru">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Sekce slouží k organizaci náboru, např. <em>„Technik – únor 2026"</em> nebo <em>„Obchodníci Q1"</em>.</p>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Název sekce</label>
+            <input type="text" className="w-full border border-gray-300 rounded p-3 text-sm focus:border-[#E30074] outline-none" placeholder="Např. Technik – únor 2026" value={newSectionName} onChange={e => setNewSectionName(e.target.value)} onKeyDown={e => e.key === 'Enter' && onAddSection()} />
+          </div>
+          <ButtonPrimary onClick={onAddSection} disabled={!newSectionName.trim()} icon={Plus}>Vytvořit sekci</ButtonPrimary>
+        </div>
+      </Modal>
+
+      {/* USERS MODAL */}
+      {isSuperAdmin && (
+        <Modal isOpen={showUsersModal} onClose={() => setShowUsersModal(false)} title="Správa HR uživatelů">
+          <div className="space-y-6">
+            <div className="space-y-3">
+              <h4 className="font-bold text-sm text-gray-700 uppercase tracking-wide">Existující uživatelé</h4>
+              <div className="divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                <div className="flex items-center justify-between py-2 text-sm">
+                  <div className="flex items-center gap-2"><span className="font-bold text-gray-900">Administrátor</span><span className="text-[10px] bg-gray-800 text-white px-1.5 py-0.5 rounded">superadmin</span></div>
+                  <span className="text-xs text-gray-400">admin / ••••••••</span>
+                </div>
+                {hrUsers.map(u => (
+                  <div key={u.id} className="flex items-center justify-between py-2">
+                    <div>
+                      <div className="font-medium text-gray-900 text-sm">{u.displayName}</div>
+                      <div className="text-xs text-gray-500">@{u.username} · přidal: {u.createdBy}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => onToggleHrUser(u.id, u.active)} className={`text-xs px-2 py-1 rounded font-bold ${u.active !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{u.active !== false ? 'Aktivní' : 'Neaktivní'}</button>
+                      <button onClick={() => onDeleteHrUser(u.id, u.displayName)} className="text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="font-bold text-sm text-gray-700 uppercase tracking-wide">Přidat nového HR uživatele</h4>
+              <input type="text" placeholder="Celé jméno (zobrazuje se)" className="w-full border border-gray-300 rounded p-2.5 text-sm focus:border-[#E30074] outline-none" value={userForm.displayName} onChange={e => setUserForm({...userForm, displayName: e.target.value})} />
+              <input type="text" placeholder="Uživatelské jméno (pro přihlášení)" className="w-full border border-gray-300 rounded p-2.5 text-sm focus:border-[#E30074] outline-none" value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value})} />
+              <input type="text" placeholder="Heslo" className="w-full border border-gray-300 rounded p-2.5 text-sm focus:border-[#E30074] outline-none" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} />
+              <ButtonPrimary onClick={onAddHrUser} disabled={!userForm.displayName || !userForm.username || !userForm.password} icon={Plus}>Vytvořit přístup</ButtonPrimary>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
@@ -1092,6 +1225,7 @@ const CandidateView = ({ currentCandidate, setAppMode, onFinish, allRoles }) => 
 // --- MAIN APP ---
 export default function TalentMatchApp() {
   const [appMode, setAppMode] = useState('landing');
+  const [currentUser, setCurrentUser] = useState(null); // { username, role, displayName }
   const [candidates, setCandidates] = useState([]);
   const [activeCandidateId, setActiveCandidateId] = useState(null);
   const [currentCandidate, setCurrentCandidate] = useState(null);
@@ -1108,7 +1242,17 @@ export default function TalentMatchApp() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [customRoles, setCustomRoles] = useState([]);
   const [showCustomRoleModal, setShowCustomRoleModal] = useState(false);
+  // Sekce náboru
+  const [recruitingSections, setRecruitingSections] = useState([]);
+  const [activeSectionId, setActiveSectionId] = useState('all');
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [newSectionName, setNewSectionName] = useState('');
+  // HR uživatelé (pouze superadmin)
+  const [hrUsers, setHrUsers] = useState([]);
+  const [showUsersModal, setShowUsersModal] = useState(false);
+  const [userForm, setUserForm] = useState({ displayName: '', username: '', password: '' });
   const allRoles = [...BASE_ROLES, ...customRoles];
+  const isSuperAdmin = currentUser?.role === 'superadmin';
 
   // Detekce odkazu pro kandidáta (?test=ID) – jen jednou při načtení
   useEffect(() => {
@@ -1137,17 +1281,29 @@ export default function TalentMatchApp() {
   // Realtime sync kandidátů jen v admin módu
   useEffect(() => {
     if (appMode !== 'admin') return;
-    const unsub = onSnapshot(collection(db, "candidates"), (snapshot) => {
+    const unsubCandidates = onSnapshot(collection(db, "candidates"), (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       setCandidates(data);
-    }, (error) => {
-      console.error("Firestore error:", error);
+    }, (error) => { console.error("Firestore error:", error); });
+
+    const unsubSections = onSnapshot(collection(db, "recruitingSections"), (snapshot) => {
+      const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      data.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+      setRecruitingSections(data);
     });
-    return () => unsub();
+
+    const unsubUsers = onSnapshot(collection(db, "hrUsers"), (snapshot) => {
+      setHrUsers(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    return () => { unsubCandidates(); unsubSections(); unsubUsers(); };
   }, [appMode]);
 
-  const handleLogin = (res) => setAppMode(res === 'admin' ? 'admin' : 'landing');
+  const handleLogin = (userObj) => {
+    setCurrentUser(userObj);
+    setAppMode('admin');
+  };
 
   const handleGenerateInvite = async () => {
     if (!inviteForm.name || !inviteForm.role) return;
@@ -1161,6 +1317,8 @@ export default function TalentMatchApp() {
         date: now.toLocaleDateString('cs-CZ'),
         linkGeneratedAt: now.toISOString(),
         createdAt: serverTimestamp(),
+        createdBy: currentUser?.displayName || 'Admin',
+        sectionId: inviteForm.sectionId || null,
         score: null,
         results: null,
         rawAnswers: null,
@@ -1302,6 +1460,53 @@ export default function TalentMatchApp() {
     win.onload = () => { win.print(); };
   };
 
+  // === SEKCE NÁBORU ===
+  const handleAddSection = async () => {
+    if (!newSectionName.trim()) return;
+    try {
+      await addDoc(collection(db, "recruitingSections"), {
+        name: newSectionName.trim(),
+        createdAt: serverTimestamp(),
+        createdBy: currentUser?.displayName || 'Admin'
+      });
+      setNewSectionName('');
+      setShowSectionModal(false);
+    } catch(e) { alert('Chyba při vytváření sekce: ' + e.message); }
+  };
+
+  const handleDeleteSection = async (sectionId) => {
+    if (!window.confirm('Smazat tuto sekci náboru? Kandidáti zůstanou, ale přestanou být součástí sekce.')) return;
+    try { await deleteDoc(doc(db, "recruitingSections", sectionId)); }
+    catch(e) { alert('Chyba: ' + e.message); }
+  };
+
+  // === HR UŽIVATELÉ ===
+  const handleAddHrUser = async () => {
+    if (!userForm.displayName || !userForm.username || !userForm.password) {
+      alert('Vyplňte všechna pole.'); return;
+    }
+    try {
+      await addDoc(collection(db, "hrUsers"), {
+        ...userForm,
+        active: true,
+        createdAt: serverTimestamp(),
+        createdBy: currentUser?.displayName || 'Admin'
+      });
+      setUserForm({ displayName: '', username: '', password: '' });
+    } catch(e) { alert('Chyba: ' + e.message); }
+  };
+
+  const handleToggleHrUser = async (userId, currentActive) => {
+    try { await updateDoc(doc(db, "hrUsers", userId), { active: !currentActive }); }
+    catch(e) { alert('Chyba: ' + e.message); }
+  };
+
+  const handleDeleteHrUser = async (userId, name) => {
+    if (!window.confirm(`Smazat uživatele ${name}?`)) return;
+    try { await deleteDoc(doc(db, "hrUsers", userId)); }
+    catch(e) { alert('Chyba: ' + e.message); }
+  };
+
   const handleDeleteCandidate = async (candidateId, candidateName) => {
     if (!window.confirm(`Opravdu chcete smazat záznam kandidáta "${candidateName}"? Tato akce je nevratná.`)) return;
     try {
@@ -1411,6 +1616,25 @@ Napiš strukturovaný report v češtině:
           onAddCustomRole={handleAddCustomRole}
           onDeleteCustomRole={handleDeleteCustomRole}
           onExportPdf={handleExportPdf}
+          currentUser={currentUser}
+          isSuperAdmin={isSuperAdmin}
+          recruitingSections={recruitingSections}
+          activeSectionId={activeSectionId}
+          setActiveSectionId={setActiveSectionId}
+          showSectionModal={showSectionModal}
+          setShowSectionModal={setShowSectionModal}
+          newSectionName={newSectionName}
+          setNewSectionName={setNewSectionName}
+          onAddSection={handleAddSection}
+          onDeleteSection={handleDeleteSection}
+          hrUsers={hrUsers}
+          showUsersModal={showUsersModal}
+          setShowUsersModal={setShowUsersModal}
+          userForm={userForm}
+          setUserForm={setUserForm}
+          onAddHrUser={handleAddHrUser}
+          onToggleHrUser={handleToggleHrUser}
+          onDeleteHrUser={handleDeleteHrUser}
         />
         <CustomRoleModal isOpen={showCustomRoleModal} onClose={() => setShowCustomRoleModal(false)} onSave={handleSaveCustomRole} />
         </>
