@@ -19,34 +19,52 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const db = getFirestore(app);
 
 // --- GEMINI API ---
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY;
+// Klíč se načítá z environment proměnné VITE_GEMINI_KEY
+// Lokálně: soubor .env v kořeni projektu: VITE_GEMINI_KEY=váš_klíč
+// Na Vercelu: Settings → Environment Variables → VITE_GEMINI_KEY
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY || "";
 
 async function callGemini(prompt, systemInstruction = "", isJson = false) {
-  try {
-    const payload = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: isJson ? { responseMimeType: "application/json" } : {},
-    };
-    if (systemInstruction) {
-      payload.systemInstruction = { parts: [{ text: systemInstruction }] };
-    }
-    const maxRetries = 3;
-    let delay = 1000;
-    for (let i = 0; i < maxRetries; i++) {
+  if (!GEMINI_API_KEY) {
+    console.error("Gemini API klíč není nastaven. Přidejte VITE_GEMINI_KEY do .env souboru.");
+    return null;
+  }
+  // Zkusíme nejdřív gemini-2.0-flash, pak fallback na gemini-1.5-flash
+  const MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+  const payload = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: isJson ? { responseMimeType: "application/json" } : {},
+  };
+  if (systemInstruction) {
+    payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+  }
+  for (const model of MODELS) {
+    try {
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
         { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
       );
       if (response.ok) {
         const data = await response.json();
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (!text) return null;
-        return isJson ? JSON.parse(text) : text;
+        if (isJson) {
+          try { return JSON.parse(text); }
+          catch { return JSON.parse(text.replace(/```json|```/g, '').trim()); }
+        }
+        return text;
       }
-      if (i < maxRetries - 1) { await new Promise(resolve => setTimeout(resolve, delay)); delay *= 2; }
-      else { throw new Error(`API Error: ${response.status}`); }
+      const errData = await response.json().catch(() => ({}));
+      console.error(`Gemini ${model} error ${response.status}:`, errData?.error?.message || response.statusText);
+      // Pokud je 400/403/404, přeskočíme na další model
+      if (response.status === 400 || response.status === 403 || response.status === 404) continue;
+      // Pro 429 (rate limit) počkáme
+      if (response.status === 429) await new Promise(r => setTimeout(r, 2000));
+    } catch (error) {
+      console.error(`Gemini ${model} fetch error:`, error);
     }
-  } catch (error) { console.error("Gemini API Error:", error); return null; }
+  }
+  return null;
 }
 
 // --- CONFIGURATION ---
@@ -1596,7 +1614,7 @@ Důležité poznámky ke škálám:
       setShowBenchmarkModal(false);
       setNewRoleDescription("");
     } else {
-      alert("AI benchmark se nepodařilo vygenerovat. Zkontrolujte API klíč.");
+      alert("AI benchmark se nepodařilo vygenerovat.\n\nZkontrolujte:\n1. Klíč VITE_GEMINI_KEY na Vercelu (Settings → Environment Variables)\n2. Klíč na aistudio.google.com není zablokovaný");
     }
     setIsGeneratingBenchmark(false);
   };
@@ -1619,7 +1637,7 @@ Napiš strukturovaný report v češtině:
 
     const text = await callGemini(prompt);
     if (text) { setAiAnalysis(text); }
-    else { setAiAnalysis("AI analýzu se nepodařilo vygenerovat. Zkontrolujte API klíč."); }
+    else { setAiAnalysis("⚠️ AI analýzu se nepodařilo vygenerovat.\n\nMožné příčiny:\n• API klíč není nastaven nebo byl zablokován\n• Překročen limit volání\n\nŘešení: Nastavte nový klíč VITE_GEMINI_KEY na aistudio.google.com a přidejte ho do Vercelu (Settings → Environment Variables)."); }
     setIsAnalysing(false);
   };
 
