@@ -114,7 +114,7 @@ const QUESTIONS = {
     { id: 20, type: 'integrity', question: 'Firma změní směr, se kterým nesouhlasíš. Co uděláš?', options: [{ text: 'Dám konstruktivní feedback a pak se plně přizpůsobím.', score: 100 }, { text: 'Ztratím motivaci.', score: 0 }, { text: 'Přizpůsobím se.', score: 70 }, { text: 'Udělám jen nutné minimum.', score: 20 }] },
     { id: 21, type: 'integrity', question: 'V kuchyňce jsou tři konvice. Konvice A je vždy plná horké vody, ale B a C jsou skoro vždy prázdné nebo právě vaří. Chceš si co nejrychleji zalít čaj. Co uděláš jako první?', options: [{ text: 'Použiji konvici A – je tam horká voda, nejefektivnější cesta k cíli.', score: 20 }, { text: 'Prozkoumám situaci – proč ji nikdo nepoužívá? Možná je v ní odvápňovač nebo stará voda.', score: 100 }, { text: 'Doleji vodu do konvice B – lidé ji preferují, raději čerstvě uvařená voda.', score: 70 }, { text: 'Zeptám se nejbližšího kolegy, jestli funguje konvice A.', score: 80 }] },
     { id: 22, type: 'integrity', question: 'Objednáváš pizzu pro 20 lidí: čtvrtina jsou vegetariáni, 3 drží bezlepkovou dietu, zbytek jí vše. Jakou logiku zvolíš při objednávce?', options: [{ text: 'Od každého druhu něco – pestrý výběr, na nikoho se nezapomene.', score: 60 }, { text: '3 bezlepkové, 5 vegetariánských, zbytek masové – přesný matematický model s oddělením.', score: 100 }, { text: '20x Margherita – jí ji skoro každý kromě bezlepkářů, ušetřím čas i peníze.', score: 40 }, { text: 'Pošlu hromadný e-mail, kde si každý vybere příchuť, a objednám přesně podle toho.', score: 70 }] },
-    { id: 23, type: 'integrity', question: 'Skládáte se na společné svačiny. Zjistíte, že peníze v pokladničce končí o dva dny dříve než obvykle, přestože kupujete stejné množství. Jak určíš příčinu?', options: [{ text: 'Zavedu knihu svačin – každý zapisuje, co si vzal, abychom odhalili problém.', score: 70 }, { text: 'Udělám revizi cen na účtenkách – možná dodavatel zdražil klíčové položky.', score: 100 }, { text: 'Navrhnu zvýšit příspěvek – inflace prostě funguje, nebudu to řešit.', score: 20 }, { text: 'Počkám, co navrhnou ostatní, a přidám se k většinovému názoru.', score: 10 }] },
+    { id: 23, type: 'integrity', question: 'Skládáte se na společné svačiny. Zjistíte, že peníze v pokladničce končí o dva dny dříve než obvykle, přestože kupujete stejné množství. Jak určíš příčinu?', options: [{ text: 'Zavedu knihu svačin – každý zapisuje, co si vzal, abychom odhalili problém.', score: 70 }, { text: 'Udělám revizi cen na účtenkách – možná dodavatel nezdražil klíčové položky.', score: 100 }, { text: 'Navrhnu zvýšit příspěvek – inflace prostě funguje, nebudu to řešit.', score: 20 }, { text: 'Počkám, co navrhnou ostatní, a přidám se k většinovému názoru.', score: 10 }] },
     { id: 24, type: 'integrity', question: 'Máš odhadnout, kolik tenisových míčků se vejde do standardního osobního auta, aniž bys je mohl přepočítat. Jak k tomu přistoupíš?', options: [{ text: 'Střelím odhad od oka – vychází to na pár stovek.', score: 20 }, { text: 'Vyhledám objem interiéru v litrech, vydělím ho přibližným objemem míčku a počítám s faktorem 60–70 % plnění.', score: 100 }, { text: 'Řeknu, že je to nemožné určit bez přesných měřicích přístrojů.', score: 0 }, { text: 'Zeptám se někoho, kdo podobný pokus viděl na internetu.', score: 30 }] },
     { id: 25, type: 'integrity', question: 'Máš před sebou pět úkolů s dnešním termínem, ale víš, že stihneš maximálně tři. Co uděláš?', options: [{ text: 'Vyberu si ty nejjednodušší, abych měl/a co nejvíce hotovo.', score: 10 }, { text: 'Seřadím je podle dopadu na cíle firmy a začnu těmi nejdůležitějšími.', score: 80 }, { text: 'Budu pracovat na všech najednou a doufat, že stihnu alespoň základy u každého.', score: 20 }, { text: 'Okamžitě informuji nadřízeného, vysvětlím situaci a domluvím se na prioritách.', score: 100 }] }
   ],
@@ -249,12 +249,30 @@ const formatTime = (seconds) => {
 
 const calculateMatch = (results, benchmarkMetrics) => {
   if (!results || !benchmarkMetrics) return 0;
-  let totalDiff = 0; let count = 0;
+  // Váhy pro každou metriku při porovnání s benchmarkem
+  const WEIGHTS = {
+    iq: 2.0,
+    integrity: 2.5,
+    conscientiousness: 1.5,
+    specific: 2.0,
+    openness: 1.0,
+    extraversion: 1.0,
+    agreeableness: 1.0,
+    neuroticism: 1.5  // neuroticismus se před porovnáním invertuje
+  };
+  let totalWeightedDiff = 0; let totalWeight = 0;
   Object.keys(benchmarkMetrics).forEach(key => {
-    if (results[key] !== undefined) { totalDiff += Math.abs(results[key] - benchmarkMetrics[key]); count++; }
+    if (results[key] === undefined || results[key] === null) return;
+    const weight = WEIGHTS[key] || 1.0;
+    // Neuroticismus: nízká hodnota kandidáta = vysoká emoční stabilita
+    // Benchmark pro neuroticism by měl být nízký -> porovnáváme přímo
+    const diff = Math.abs(results[key] - benchmarkMetrics[key]);
+    totalWeightedDiff += diff * weight;
+    totalWeight += weight;
   });
-  if (count === 0) return 0;
-  return Math.round(Math.max(0, 100 - (totalDiff / count)));
+  if (totalWeight === 0) return 0;
+  const avgWeightedDiff = totalWeightedDiff / totalWeight;
+  return Math.round(Math.max(0, 100 - avgWeightedDiff));
 };
 
 // --- COMPONENTS ---
@@ -762,14 +780,14 @@ const AdminView = ({
   const activeBenchmark = getActiveBenchmark();
 
   const METRIC_LABELS = [
-    { key: 'iq', label: 'IQ / Analytika' },
-    { key: 'integrity', label: 'Hodnotový fit' },
-    { key: 'conscientiousness', label: 'Svědomitost' },
-    { key: 'specific', label: 'Odbornost' },
-    { key: 'openness', label: 'Otevřenost' },
-    { key: 'extraversion', label: 'Extraverze' },
-    { key: 'agreeableness', label: 'Přívětivost' },
-    { key: 'neuroticism', label: 'Emoční stabilita', inverted: true }
+    { key: 'iq', label: 'IQ / Analytika', desc: 'Logické a analytické myšlení' },
+    { key: 'integrity', label: 'Hodnotový fit', desc: 'Situační chování a hodnoty' },
+    { key: 'conscientiousness', label: 'Svědomitost', desc: 'Organizace, plnění termínů' },
+    { key: 'specific', label: 'Odbornost', desc: 'Znalosti specifické pro pozici' },
+    { key: 'openness', label: 'Otevřenost', desc: 'Kreativita a přijímání novinek' },
+    { key: 'extraversion', label: 'Extraverze', desc: 'Sociálnost a aktivita' },
+    { key: 'agreeableness', label: 'Přívětivost', desc: 'Kooperativnost a empatie' },
+    { key: 'neuroticism', label: 'Emoční stabilita', desc: 'Nízký neuroticismus = stabilní', inverted: true }
   ];
 
   return (
@@ -834,13 +852,19 @@ const AdminView = ({
                     <div className="space-y-5">
                       {METRIC_LABELS.filter(m => !(m.key === 'specific' && allRoles.find(r => r.id === viewCandidate.roleId)?.noSpecific)).map(m => {
                         const rawVal = viewCandidate.results?.[m.key] ?? 0;
+                        // Pro neuroticismus zobrazujeme emoční stabilitu (100 - neuroticism)
                         const candVal = m.inverted ? (100 - rawVal) : rawVal;
-                        const benchVal = activeBenchmark?.metrics?.[m.key] ?? 0;
+                        // Benchmark pro neuroticism je také třeba invertovat pro správné porovnání
+                        const rawBenchVal = activeBenchmark?.metrics?.[m.key] ?? 0;
+                        const benchVal = m.inverted ? (100 - rawBenchVal) : rawBenchVal;
                         const diff = candVal - benchVal;
                         return (
                           <div key={m.key}>
                             <div className="flex justify-between text-xs mb-1.5">
-                              <span className="font-bold text-gray-700 w-28">{m.label}</span>
+                              <div className="w-32 flex-shrink-0">
+                                <div className="font-bold text-gray-700 text-xs">{m.label}</div>
+                                {m.desc && <div className="text-[10px] text-gray-400 leading-tight">{m.desc}</div>}
+                              </div>
                               <div className="flex-grow mx-3 flex items-center">
                                 <div className="w-full bg-gray-200 h-2 rounded-full relative">
                                   <div style={{ width: `${benchVal}%` }} className="absolute top-0 left-0 h-full bg-gray-400 opacity-40 rounded-full"></div>
@@ -848,7 +872,7 @@ const AdminView = ({
                                   <div style={{ width: `${candVal}%` }} className={`absolute top-0 left-0 h-full rounded-full opacity-90 ${S_MAGENTA}`}></div>
                                 </div>
                               </div>
-                              <div className="w-24 text-right flex justify-end gap-2">
+                              <div className="w-28 text-right flex justify-end gap-2 flex-shrink-0">
                                 <span className="font-bold text-gray-800">{candVal}</span>
                                 <span className="text-gray-400 text-[10px] pt-0.5">vs {benchVal}</span>
                                 <span className={`text-[10px] font-bold w-8 text-right ${diff >= 0 ? 'text-green-600' : 'text-red-500'}`}>{diff > 0 ? '+' : ''}{diff}</span>
@@ -1354,27 +1378,35 @@ export default function TalentMatchApp() {
   };
 
   const handleCandidateFinish = async (results, timeTaken, rawAnswers) => {
-    // Celkové skóre: IQ (25%), Integrita/hodnoty (35%), Svědomitost (15%), Přívětivost (10%), Odbornost (15%)
-    // Neuroticismus se invertuje (nižší = lepší emoční stabilita)
+    // Celkové skóre – váhované
+    // Neuroticismus se invertuje: nízký neuroticismus = vysoká emoční stabilita
     const emotionalStability = 100 - (results.neuroticism || 50);
     const hasSpecific = results.specific !== null && results.specific !== undefined;
     let avgScore;
     if (hasSpecific) {
+      // S odbornou sekcí (4 části):
+      // IQ 20%, Hodnotový fit 28%, Svědomitost 12%, Emoční stabilita 8%,
+      // Přívětivost 5%, Otevřenost 7%, Odbornost 20%
       avgScore = Math.round(
         (results.iq || 0) * 0.20 +
-        (results.integrity || 0) * 0.30 +
-        (results.conscientiousness || 0) * 0.15 +
-        emotionalStability * 0.10 +
+        (results.integrity || 0) * 0.28 +
+        (results.conscientiousness || 0) * 0.12 +
+        emotionalStability * 0.08 +
         (results.agreeableness || 0) * 0.05 +
+        (results.openness || 0) * 0.07 +
         (results.specific || 0) * 0.20
       );
     } else {
+      // Bez odborné sekce (obecná pozice):
+      // IQ 22%, Hodnotový fit 33%, Svědomitost 15%, Emoční stabilita 10%,
+      // Přívětivost 8%, Otevřenost 12%
       avgScore = Math.round(
-        (results.iq || 0) * 0.25 +
-        (results.integrity || 0) * 0.35 +
-        (results.conscientiousness || 0) * 0.20 +
-        emotionalStability * 0.12 +
-        (results.agreeableness || 0) * 0.08
+        (results.iq || 0) * 0.22 +
+        (results.integrity || 0) * 0.33 +
+        (results.conscientiousness || 0) * 0.15 +
+        emotionalStability * 0.10 +
+        (results.agreeableness || 0) * 0.08 +
+        (results.openness || 0) * 0.12
       );
     }
     try {
@@ -1542,7 +1574,21 @@ export default function TalentMatchApp() {
     if (!newRoleDescription) return;
     setIsGeneratingBenchmark(true);
     const data = await callGemini(
-      `Jsi expert HR psycholog. Převeď tento popis role na JSON objekt. Popis: "${newRoleDescription}". Vrať POUZE JSON ve formátu: {"role": "název role", "metrics": {"iq": 0-100, "openness": 0-100, "conscientiousness": 0-100, "extraversion": 0-100, "agreeableness": 0-100, "neuroticism": 0-100, "integrity": 0-100, "specific": 0-100}}`,
+      `Jsi expert HR psycholog. Převeď tento popis role na JSON objekt s ideálním profilem kandidáta.
+Popis role: "${newRoleDescription}"
+
+Vrať POUZE JSON ve formátu:
+{"role": "název role", "metrics": {"iq": 0-100, "openness": 0-100, "conscientiousness": 0-100, "extraversion": 0-100, "agreeableness": 0-100, "neuroticism": 0-100, "integrity": 0-100, "specific": 0-100}}
+
+Důležité poznámky ke škálám:
+- iq: analytické schopnosti, 70+ = nadprůměr
+- integrity: hodnotový fit a situační chování, 75+ = silný kandidát
+- conscientiousness: svědomitost a organizace, vyšší = lépe
+- extraversion: 80+ = velmi extrovertní, 20 = velmi introvertní (oboje může být žádoucí)
+- agreeableness: kooperativnost a empatie
+- neuroticism: NÍZKÁ hodnota (0-30) = žádoucí (emoční stabilita), VYSOKÁ (70+) = nestabilní
+- openness: kreativita a otevřenost novým věcem
+- specific: odborné znalosti pro danou roli`,
       "", true
     );
     if (data) {
