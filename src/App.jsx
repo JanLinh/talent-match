@@ -6,12 +6,12 @@ import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, collection, addDoc, updateDoc, doc, onSnapshot, getDoc, getDocs, deleteDoc, serverTimestamp, query, where, orderBy } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCji-kM2w14LSBB1ndfoo8yN_8gsvh7OhM",
-  authDomain: "hr-platform-103f5.firebaseapp.com",
-  projectId: "hr-platform-103f5",
-  storageBucket: "hr-platform-103f5.firebasestorage.app",
-  messagingSenderId: "37825828566",
-  appId: "1:37825828566:web:c8436abf48076477c21b77"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCji-kM2w14LSBB1ndfoo8yN_8gsvh7OhM",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "hr-platform-103f5.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "hr-platform-103f5",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "hr-platform-103f5.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "37825828566",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:37825828566:web:c8436abf48076477c21b77"
 };
 
 // Bezpečná inicializace – zabraňuje chybě při hot-reloadu
@@ -65,6 +65,15 @@ async function callGemini(prompt, systemInstruction = "", isJson = false) {
     }
   }
   return null;
+}
+
+// --- SECURITY UTILITIES ---
+async function hashPassword(password) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + 'talentmatch_salt_2024');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 // --- CONFIGURATION ---
@@ -606,17 +615,22 @@ const LoginScreen = ({ onLogin }) => {
     if (!username || !password) { setError('Vyplňte uživatelské jméno a heslo.'); return; }
     setLoading(true); setError('');
     // Hardcoded superadmin
-    if (username === 'admin' && password === 'smarty2025') {
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'smarty2025';
+    if (username === 'admin' && password === adminPassword) {
       onLogin({ username: 'admin', role: 'superadmin', displayName: 'Administrátor' });
       setLoading(false); return;
     }
-    // Check Firestore HR users
+    // Check Firestore HR users – porovnáváme SHA-256 hash hesla
     try {
       const q = query(collection(db, "hrUsers"), where("username", "==", username.trim()));
       const snap = await getDocs(q);
       if (!snap.empty) {
         const userDoc = snap.docs[0].data();
-        if (userDoc.password === password && userDoc.active !== false) {
+        const inputHash = await hashPassword(password);
+        // Podpora hash i plain text (pro stávající účty)
+        const stored = userDoc.passwordHash || userDoc.password || '';
+        const matches = stored === inputHash || stored === password;
+        if (matches && userDoc.active !== false) {
           onLogin({ username: userDoc.username, role: 'hr', displayName: userDoc.displayName || userDoc.username, id: snap.docs[0].id });
           setLoading(false); return;
         }
@@ -1137,7 +1151,7 @@ const AdminView = ({
                   <div key={u.id} className="flex items-center justify-between py-2">
                     <div>
                       <div className="font-medium text-gray-900 text-sm">{u.displayName}</div>
-                      <div className="text-xs text-gray-500">@{u.username} · přidal: {u.createdBy}</div>
+                      <div className="text-xs text-gray-500">@{u.username} · přidal: {u.createdBy} {u.passwordHash ? <span className="text-green-600">🔒 hash</span> : <span className="text-orange-500">⚠️ aktualizujte heslo</span>}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => onToggleHrUser(u.id, u.active)} className={`text-xs px-2 py-1 rounded font-bold ${u.active !== false ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{u.active !== false ? 'Aktivní' : 'Neaktivní'}</button>
@@ -1536,8 +1550,11 @@ export default function TalentMatchApp() {
       alert('Vyplňte všechna pole.'); return;
     }
     try {
+      const pwHash = await hashPassword(userForm.password);
       await addDoc(collection(db, "hrUsers"), {
-        ...userForm,
+        displayName: userForm.displayName,
+        username: userForm.username,
+        passwordHash: pwHash,  // ukládáme hash, ne plain text
         active: true,
         createdAt: serverTimestamp(),
         createdBy: currentUser?.displayName || 'Admin'
